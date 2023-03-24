@@ -20,13 +20,14 @@ int main(int argc, char *argv[]){
         std::cerr<<"[addrinfo]: "<<gai_strerror(rc)<<"\n";
         return -1;
     }
-    for(struct addrinfo* i = result; i !=0; i=i->ai_next)
-    {
-        char host[NI_MAXHOST];
-        char server[NI_MAXSERV];
-        getnameinfo(i->ai_addr, i->ai_addrlen, host, NI_MAXHOST, server, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
-        std::cout << "IP: " << host << " PORT: " << server << "\n";
-    }
-    freeaddrinfo(result);
+    int sd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+	rc = bind(sd, result->ai_addr, result->ai_addrlen);
+
+	freeaddrinfo(result);
+	if(rc==-1){
+		std__cerr << "[bind]: " << stderror(errno) << "\n";
+		return -1;
+	}
+
 	return 0;
 }
