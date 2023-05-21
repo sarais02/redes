@@ -1,0 +1,12 @@
+sudo apt-get install libsdl2-dev                                1* SALDRA K NO SE PUEDE
+sudo apt-get update                                             2* PONER ESTA LINEA
+sudo apt-get install libsdl2-dev                                3* AHORA DEJA
+sudo apt-get install libsdl2-mixer-dev                          4* INSTALAR mixer
+sudo apt-get install libsdl2-ttf-dev                            5* TEXTOS Y MIERDAS
+
+
+                    PASO 6*
+
+arriba a la izquierda de visual studio buscar File >> preferences >> settings 
+una vez qencontrado settings buscar c_cpp_prop y en donde pone C_Cpp >Default: Include Path
+poner /usr/include/SDL2 y añadirlo 
