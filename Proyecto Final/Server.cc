@@ -1,46 +1,45 @@
-#include <thread>
-#include <SDL2/SDL.h>
-int main(int argc, char **argv)
-{
-    
-    //ChatClient ec(argv[1], argv[2], argv[3]);
+#include "Server.h"
 
-    //std::thread net_thread([&ec](){ ec.net_thread(); });
+void Server::do_messages(){
+   while (true)
+    {
+        /*
+         * NOTA: los clientes están definidos con "smart pointers", es necesario
+         * crear un unique_ptr con el objeto socket recibido y usar std::move
+         * para añadirlo al vector
+         */
 
-    //ec.login();
+        //Recibir Mensajes en y en función del tipo de mensaje
+        // - LOGIN: Añadir al vector clients
+        // - LOGOUT: Eliminar del vector clients
+        // - MESSAGE: Reenviar el mensaje a todos los clientes (menos el emisor)
+        //Socket* clientSd;
+        //ChatMessage msg;
+        //Recibir Mensajes en y en función del tipo de mensaje
+        //socket.recv(msg, clientSd);
 
-    //ec.input_thread();
-    // Inicializar SDL   
-    //if (SDL_Init(SDL_INIT_VIDEO) != 0)
-    //{
-    //    SDL_Log("Error al inicializar SDL: %s", SDL_GetError());
-    //    return 1;
-    //}
+        //if(msg.type == ChatMessage::MessageType::LOGIN){
+        //    std::cout << msg.nick << " LOGIN\n";
+        //    clients.push_back(std::unique_ptr<Socket>(std::move(clientSd)));
+        //}
+        // - LOGOUT: Eliminar del vector clients
+        //else if(msg.type == ChatMessage::MessageType::LOGOUT){
+        //    std::cout << msg.nick << " LOGOUT\n";
+        //    auto it = clients.begin();
+        //    while(it != clients.end() && !(*(*it).get() == *clientSd)) it++;
+        //    clients.erase(it);
+        //}
+        // - MESSAGE: Reenviar el mensaje a todos los clientes (menos el emisor)
+        //else if(msg.type == ChatMessage::MessageType::MESSAGE){
+        //    std::cout << msg.nick << " MESSAGE\n";
+        //    for(int i=0; i<clients.size(); ++i){
+        //        if(!(*(clients[i].get()) == *clientSd))
+        //            socket.send(msg, (*clients[i].get()));
+        //    }
+        //}
 
-    // Crear una ventana
-    //SDL_Window *window = SDL_CreateWindow("Mi Ventana", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_SHOWN);
-    //if (window == nullptr)
-    //{
-    //   SDL_Log("Error al crear la ventana: %s", SDL_GetError());
-    //    return 1;
-    //}
+    }
+}
+void Server::initTablero(){
 
-    // Mantener la ventana abierta
-    //bool quit = false;
-    //while (!quit)
-    //{
-    //    SDL_Event event;
-    //    while (SDL_PollEvent(&event))
-    //    {
-    //        if (event.type == SDL_QUIT)
-    //        {
-    //            quit = true;
-    //        }
-    //    }
-    //}
-
-    // Liberar recursos y cerrar SDL
-    //SDL_DestroyWindow(window);
-    //SDL_Quit();
-    return 0;
 }
