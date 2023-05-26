@@ -1,9 +1,37 @@
-#include "ChatMessage.h"
+#include "Message.h"
+#include <iostream>
+Message::Message():Serializable(),type(EMPTY){
+};
 
-// -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
+void Message::to_bin(){
+    alloc_data(sizeof(uint8_t));
+    memset(_data, 0, sizeof(uint8_t));
+    //Serializar los campos type, nick y message en el buffer _data
+    char* buffer = _data;
+    memcpy(buffer, &type, sizeof(uint8_t));
+};
 
-void ChatMessage::to_bin(){
+int Message::from_bin(char * bobj){
+    alloc_data(MESSAGE_SIZE);
+    memcpy(static_cast<void*>(_data), bobj, MESSAGE_SIZE);
+    memcpy(&type,bobj, sizeof(uint8_t));
+    //std::cout<<"Recibido mensaje de tipo: "<<type<<"\n";
+    return 0;
+};
+
+u_int8_t Message::getType(){
+    return type;
+};
+
+void Message::setType(u_int8_t type){
+    this->type=type;
+}
+
+IN_OUT::IN_OUT(const std::string& n, const std::string& m,bool in_out):Message(),nick(n),message(m){
+    type = in_out ? LOGIN: LOGOUT;
+};
+
+void IN_OUT::to_bin(){
     alloc_data(MESSAGE_SIZE);
 
     memset(_data, 0, MESSAGE_SIZE);
@@ -16,19 +44,27 @@ void ChatMessage::to_bin(){
     memcpy(buffer, message.c_str(), sizeof(char) * 80);
 }
 
-int ChatMessage::from_bin(char * bobj){
+int IN_OUT::from_bin(char * bobj){
     alloc_data(MESSAGE_SIZE); 
     memcpy(static_cast<void*>(_data), bobj, MESSAGE_SIZE); 
     //Reconstruir la clase usando el buffer _data
-    char* buffer = _data; memcpy(&type, buffer, sizeof(uint8_t)); 
-    buffer += sizeof(uint8_t); char nick_buffer[8] = {0}; 
+    char* buffer = _data; 
+    memcpy(&type, buffer, sizeof(uint8_t)); 
+    buffer += sizeof(uint8_t); 
+    char nick_buffer[8] = {0}; 
     memcpy(nick_buffer, buffer, 8* sizeof(char)); 
     nick = std::string(nick_buffer); 
-    buffer += 8* sizeof(char); char message_buffer[81] = {0};
+    buffer += 8* sizeof(char); 
+    char message_buffer[81] = {0};
     memcpy(message_buffer, buffer, 80 * sizeof(char)); 
     message = std::string(message_buffer); 
     return 0;
 }
+
+PlayerSerializable::PlayerSerializable(std::string Nick, int16_t IndexPosition, int16_t Dinero, int16_t IndexPlayer):
+    nick(Nick),indexPosition(IndexPosition),indexPlayer(IndexPlayer),dinero(Dinero){
+        type=PLAYERSERIALIZABLE;
+    };
 
 void PlayerSerializable::to_bin(){
     alloc_data(MESSAGE_SIZE);
@@ -36,8 +72,10 @@ void PlayerSerializable::to_bin(){
     memset(_data, 0, MESSAGE_SIZE);
     //Serializar los campos type, nick y message en el buffer _data
     char* tmp = _data;
-    memcpy(tmp, nick.c_str(), sizeof(char)* 10);   
-    tmp += sizeof(char) * 10;
+    memcpy(tmp, &type, sizeof(uint8_t));
+    tmp += sizeof(uint8_t);
+    memcpy(tmp, nick.c_str(), sizeof(char)* 8);   
+    tmp += sizeof(char) * 8;
     //std::cout<<"NICK\n";
     memcpy(tmp, &indexPosition, sizeof(int16_t));
     tmp += sizeof(int16_t);
@@ -54,10 +92,12 @@ int PlayerSerializable::from_bin(char * bobj){
     memcpy(static_cast<void*>(_data), bobj, MESSAGE_SIZE); 
     //Reconstruir la clase usando el buffer _data
     char* buffer = _data;
-    char nick_buffer[10]; 
-    memcpy(&nick_buffer, buffer, 10* sizeof(char)); 
+    memcpy(&type, buffer, sizeof(uint8_t)); 
+    buffer += sizeof(uint8_t); 
+    char nick_buffer[8]; 
+    memcpy(&nick_buffer, buffer, 8 * sizeof(char)); 
     nick = std::string(nick_buffer); 
-    buffer += 10* sizeof(char);
+    buffer += 8* sizeof(char);
     memcpy(&indexPosition, buffer, sizeof(int16_t));
     buffer+=sizeof(int16_t);
     memcpy(&dinero, buffer, sizeof(int16_t));

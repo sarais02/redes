@@ -1,94 +1,59 @@
 #include "Server.h"
-#include "ChatMessage.h"
 #include <random>
-
+#include "Message.h"
 void Server::init(){
     initTablero();
 }
 void Server::do_messages(){
-   while (true)
-    {
-
-        /*
-         * NOTA: los clientes están definidos con "smart pointers", es necesario
-         * crear un unique_ptr con el objeto socket recibido y usar std::move
-         * para añadirlo al vector
-         */
-        
-        ChatMessage mensaje;
-        Serializable tmp;
+   while (true){
+        Message tmpMessage;      
         //Recibir Mensajes en y en socketfunción del tipo de mensaje
         Socket* socket_cliente;
-        socket.recv(mensaje, socket_cliente);
-        //if(tmp.size()==ChatMessage::MESSAGE_SIZE){
-           
-            
-            //mensaje.from_bin(tmp.data());
-            // - LOGIN: Añadir al vectosocketr clients
-            // - LOGOUT: Eliminar del vector clients
-            // - MESSAGE: Reenviar el mensaje a todos los clientes (menos el emisor)
-            switch(mensaje.type){
-                case ChatMessage::LOGIN:{
-                    std::unique_ptr<Socket>socket1_(socket_cliente);
-                    socketsPlayers.push_back(std::move(socket1_));
-                    std::cout<<"LOGIN DE: "<<mensaje.nick<<"\n";
+        socket.recv(tmpMessage, socket_cliente);                      
+          
+        // - LOGIN: Añadir al vectosocketr clients
+        // - LOGOUT: Eliminar del vector clients
+        // - MESSAGE: Reenviar el mensaje a todos los clientes (menos el emisor)
+        switch(tmpMessage.getType()){
+            case LOGIN:{
+                IN_OUT in;
+                in.from_bin(tmpMessage.data());
+                std::unique_ptr<Socket>socket1_(socket_cliente);
+                socketsPlayers.push_back(std::move(socket1_));
+                std::cout<<"LOGIN DE: "<<in.nick<<"\n";
 
-                    PlayerSerializable tmpPLayer(mensaje.nick, 0, 1500,(int)(socketsPlayers.size()-1));
-                    players.push_back(tmpPLayer);    
+                PlayerSerializable tmpPLayer(in.nick, 0, 1500,(int)(socketsPlayers.size()-1));
+                players.push_back(tmpPLayer);    
 
-                    //PlayerSerializable tmpPLayer(mensaje.nick, 0, 1500,(int)(socketsPlayers.size()-1));
-                    //players.push_back(tmpPLayer);
-                    
-                    //int r =socket.send(tmpPLayer, *(socket1_.get()));
-                    //std::cout<<"ENVIADO\n";
-                    //if(r==-1){
-                    //    std::cout<<"ERROR en el send"<<"\n";
-                    //}
-                    break;
-                }  
-                case ChatMessage::LOGOUT:{
-                    std::unique_ptr<Socket>socket_(socket_cliente);
-                    for(auto it=socketsPlayers.begin();it!=socketsPlayers.end();){
-                        if(*(*it)==*socket_cliente){
-                            socketsPlayers.erase(it);
-                        }
-                        else ++it;
+                break;
+            }  
+            case LOGOUT:{
+                IN_OUT out;
+                out.from_bin(tmpMessage.data());
+                std::unique_ptr<Socket>socket_(socket_cliente);
+                for(auto it=socketsPlayers.begin();it!=socketsPlayers.end();){
+                    if(*(*it)==*socket_cliente){
+                        socketsPlayers.erase(it);
                     }
-                    std::cout<<"LOGOUT DE: "<<mensaje.nick<<"\n";
-                    break;
+                    else ++it;
                 }
-                
-                case ChatMessage::MESSAGE:{
-                    std::cout<<"mandando mensaje"<<std::endl;
-                    //std::unique_ptr<Socket>socket_(socket_cliente);
-                    for(auto it=socketsPlayers.begin();it!=socketsPlayers.end();){
-                        if(*(*it)==*socket_cliente){
-                            std::cout<<"no soy yo"<<std::endl;
-                        }
-                        else{
-                            socket.send(mensaje, *(*it));
-                            std::cout<<"enviando"<<std::endl;
-                        } 
-                    ++it;
-                    }
-                    break;
-                }
-                case ChatMessage::THROW:{
-                    std::cout<<"mandando mensaje"<<std::endl;
-                    //std::unique_ptr<Socket>socket_(socket_cliente);
-                    for(auto it=socketsPlayers.begin();it!=socketsPlayers.end();){
-                        if(*(*it)==*socket_cliente){
-                            std::cout<<"no soy yo"<<std::endl;
-                        }
-                        else{
-                            socket.send(mensaje, *(*it));
-                            std::cout<<"enviando"<<std::endl;
-                        } 
-                    ++it;
-                    }
-                    break;
-                }
+                std::cout<<"LOGOUT DE: "<<out.nick<<"\n";
+                break;
             }
+            case PLAYERSERIALIZABLE:{
+                PlayerSerializable player;
+                player.from_bin(tmpMessage.data());
+                players[player.indexPlayer]=player;
+                std::cout<<"Player se ha movido: "<<player.indexPosition<<"\n";
+                break;
+            }
+            case ENDTURN:{
+                indexTurno =indexTurno+1 % turnos.size();               
+                Message initturno;
+                initturno.setType(INITURN);
+                socket.send(initturno, *socketsPlayers[turnos[indexTurno]]);
+            }
+        }
         //}
         //else if(tmp.size()==PlayerSerializable::MESSAGE_SIZE){
         //    PlayerSerializable player;
@@ -105,7 +70,6 @@ void Server::input_thread(){
             
             initTablero();
             initPlayers();
-            break;
         }
     }
 }
@@ -125,14 +89,15 @@ void Server::initPlayers(){
         while(turnos[rand]!=-1)rand= std::rand() % max;
         turnos[rand]=i;
     }
-    std::cout<<"ENTRA "<<players.size()<<"\n";
     int i=0;
     for(auto it=socketsPlayers.begin(); it!=socketsPlayers.end(); ++it){
         if((*it)==nullptr)std::cout<<"NULL\n";
         socket.send(players[i], *(*it));
-        std::cout<<"ENVIADO "<<i<<"\n";
+        std::cout<<"ENVIADO "<<players[i].indexPlayer<<"\n";
         i++;
     }
-   
-    indexTurno++;
+    Message initturno;
+    initturno.setType(INITURN);
+    socket.send(initturno, *socketsPlayers[turnos[indexTurno]]);
+    std::cout<<"ENVIADO TURNO A: "<<turnos[indexTurno]<<"\n";
 }

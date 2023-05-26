@@ -7,13 +7,10 @@
 #include <vector>
 #include <memory>
 
-
-#include "Serializable.h"
 #include "Socket.h"
 #include "Casilla.h"
 #include "Player.h"
-#include "ChatMessage.h"
-
+#include "Message.h"
 
 class Server{
 public:
@@ -48,7 +45,7 @@ private:
      */
     Socket socket;
     /**
-     * Guardar los turnos la clave es el turno y el valor el identificador del jugador
+     * vector con los indices de los jugadores por turnos
      */
     std::vector<int> turnos;
     int indexTurno=0;

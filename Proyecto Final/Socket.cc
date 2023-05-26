@@ -34,19 +34,17 @@ int Socket::recv(Serializable &obj, Socket * &sock)
     socklen_t sa_len = sizeof(struct sockaddr);
 
     char buffer[MAX_MESSAGE_SIZE];
-
     ssize_t bytes = ::recvfrom(sd, buffer, MAX_MESSAGE_SIZE, 0, &sa, &sa_len);
-
-    if ( bytes <= 0 )
-    {
+   
+    if ( bytes <= 0 ){
         return -1;
     }
-    std::cout<<"bytes es:" << bytes<< std::endl; 
-    std::cout<<"antes sock es:" << sock<< std::endl;  
-    if ( sock != 0 )
+    //std::cout<<"bytes es:" << bytes<< std::endl; 
+    //std::cout<<"antes sock es:" << sock<< std::endl;  
+    if ( sock ==0 )
     {    
         sock = new Socket(&sa, sa_len);
-        std::cout<<"sock es:" << sock<< std::endl;
+        //std::cout<<"sock es:" << sock<< std::endl;
     }
 
     obj.from_bin(buffer);

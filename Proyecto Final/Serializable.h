@@ -35,14 +35,14 @@ public:
      *  Genera la representación binaria de la clase. Debe inicializar
      *  el buffer interno con la función helper alloc_data.
      */
-    virtual void to_bin();
+    virtual void to_bin()=0;
 
     /**
      *  Esta función recibe un objeto serializado y lo reconstruye.
      *    @param data representación binaria del objeto
      *    @return 0 si éxito -1 en caso contrario
      */
-    virtual int from_bin(char * data);
+    virtual int from_bin(char * data)=0;
 
     /**
      *  Devuelve un puntero al buffer interno con la representación del objeto.

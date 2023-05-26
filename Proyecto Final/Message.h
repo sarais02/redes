@@ -1,14 +1,33 @@
-#ifndef CHATMESSAGE_H_
-#define CHATMESSAGE_H_
+#ifndef MESSAGE_H_
+#define MESSAGE_H_
 
+#include "Serializable.h"
 #include <string>
 #include <unistd.h>
 #include <string.h>
 #include <vector>
 #include <memory>
 
-#include "Serializable.h"
-#include "Socket.h"
+
+enum TypesMessages : u_int8_t {
+    EMPTY=0,
+    LOGIN=1,
+    LOGOUT=2,
+    PLAYERSERIALIZABLE=3,
+    INITURN=4,
+    ENDTURN=5
+};
+class Message:public Serializable{
+public:
+    static const size_t MESSAGE_SIZE = 1024;
+    Message();
+    virtual void to_bin() override;
+    virtual int from_bin(char * bobj) override;
+    u_int8_t getType();
+    void setType(u_int8_t type);
+protected:
+    u_int8_t type;
+};
 /**
  *  Mensaje del protocolo de la aplicación de Chat
  *
@@ -23,29 +42,17 @@
  *  +-------------------+
  *
  */
-class ChatMessage: public Serializable
-{
+class IN_OUT: public Message{
 public:
     static const size_t MESSAGE_SIZE = sizeof(char) * 88 + sizeof(uint8_t);
 
-    enum MessageType
-    {
-        LOGIN   = 0,
-        MESSAGE = 1,
-        LOGOUT  = 2,
-        THROW   = 3,
-        YOURTURN= 4
-    };
+    IN_OUT():Message(){};
 
-    ChatMessage(){};
-
-    ChatMessage(const std::string& n, const std::string& m):nick(n),message(m){};
+    IN_OUT(const std::string& n, const std::string& m,bool in_out);
 
     void to_bin() override;
 
     int from_bin(char * bobj) override;
-
-    uint8_t type;
 
     std::string nick;
     std::string message;
@@ -69,12 +76,12 @@ public:
  *  |                   |
  *  +-------------------+
  */
-class PlayerSerializable:public Serializable{
+class PlayerSerializable: public Message{
 public:
-    static const size_t MESSAGE_SIZE = sizeof(char) * 10 + sizeof(int16_t) * 3;
+    static const size_t MESSAGE_SIZE = sizeof(uint8_t) + sizeof(char) * 8 + sizeof(int16_t) * 3;
 
-    PlayerSerializable(){};
-    PlayerSerializable(std::string Nick, int16_t IndexPosition, int16_t Dinero, int16_t IndexPlayer):nick(Nick),indexPosition(IndexPosition),indexPlayer(IndexPlayer),dinero(Dinero){};
+    PlayerSerializable():Message(){type=PLAYERSERIALIZABLE;};
+    PlayerSerializable(std::string Nick, int16_t IndexPosition, int16_t Dinero, int16_t IndexPlayer);
 
     void to_bin() override;
     int from_bin(char * bobj) override;
