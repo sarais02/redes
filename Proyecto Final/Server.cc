@@ -18,7 +18,7 @@ void Server::do_messages(){
         ChatMessage mensaje;
         Serializable tmp;
         //Recibir Mensajes en y en socketfunción del tipo de mensaje
-        Socket* socket_cliente= new Socket(socket);
+        Socket* socket_cliente;
         socket.recv(mensaje, socket_cliente);
         //if(tmp.size()==ChatMessage::MESSAGE_SIZE){
            

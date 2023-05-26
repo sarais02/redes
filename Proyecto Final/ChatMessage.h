@@ -33,7 +33,8 @@ public:
         LOGIN   = 0,
         MESSAGE = 1,
         LOGOUT  = 2,
-        THROW
+        THROW   = 3,
+        YOURTURN= 4
     };
 
     ChatMessage(){};

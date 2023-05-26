@@ -44,8 +44,7 @@ int Socket::recv(Serializable &obj, Socket * &sock)
     std::cout<<"bytes es:" << bytes<< std::endl; 
     std::cout<<"antes sock es:" << sock<< std::endl;  
     if ( sock != 0 )
-    {   
-        delete sock;     
+    {    
         sock = new Socket(&sa, sa_len);
         std::cout<<"sock es:" << sock<< std::endl;
     }
