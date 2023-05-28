@@ -4,7 +4,7 @@
 #include <vector>
 
 //Enum para ver el tipo de casilla
-enum Type: u_int8_t{NOTHING=0,Calle=1,Carcel=2,Suerte=3,Comunidad=4,Impuesto=5,Salida=6};
+enum Type: u_int8_t{NOTHING=0,CALLE=1,CARCEL=2,SUERTE=3,COMUNIDAD=4,IMPUESTO=5,SALIDA=6};
 
 class Casilla{
 protected:
@@ -37,9 +37,12 @@ class Calle: public Casilla{
     int indexRentPrices=0;
     //Precios que deben comerlos jugadores
     std::vector<int> rentPrices;
-
+    //Conste de contruir una casa en la propiedad
+    int housePrice;
+    //CALLES DE COLOR
+    std::vector<int> familyColors;
 public:
-    Calle(std::string namee, u_int8_t type, std::vector<int> prices,int mortgagee);
+    Calle(std::string namee, u_int8_t type, std::vector<int> prices,int buy,int mortgagee,int house,std::vector<int> familyColors);
     ~Calle()=default;
 
     inline int getPrice(){return buyPrice;};
