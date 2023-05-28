@@ -38,7 +38,7 @@ void Player::input_thread(){
                 indexPosition%=39;               
                 std::cout<<"Tiro: "<<dado1<<" "<<dado2<<"\n";
                 std::cout<<"IndexPosition: "<<indexPosition<<"\n";              
-                PlayerSerializable player(nick,indexPosition,dinero,indexPlayer);
+                PlayerSerializable player(nick,indexPosition,money,indexPlayer);
                 socket.send(player,socket);
             }
             if(msg=="e"){
@@ -67,7 +67,7 @@ void Player::net_thread(){
                 if(playerMSG.indexPlayer==indexPlayer || indexPlayer==-1){
                     indexPosition=playerMSG.indexPosition;
                     indexPlayer=playerMSG.indexPlayer;
-                    dinero=playerMSG.dinero;
+                    money=playerMSG.dinero;
                     std::cout<<"INIT RECIDIBIDO "<<indexPlayer<<"\n";                   
                 }
                 break;

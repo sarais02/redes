@@ -34,7 +34,7 @@ private:
      * Tablero de Juego
      * 
     */
-    std::vector<std::unique_ptr<Casilla>> tablero;
+    std::vector<Casilla*> tablero;
     /**
      * TJugadores
      * 

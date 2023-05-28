@@ -6,6 +6,7 @@
 #include <string.h>
 #include <vector>
 #include <memory>
+#include <unordered_map>
 
 #include "Serializable.h"
 #include "Socket.h"
@@ -23,7 +24,7 @@ public:
      * @param n nick del usuario
      */
     Player(const char * s, const char * p, const char * n):socket(s, p),
-        nick(n){};
+        nick(n){playerProperties=std::unordered_map<int,std::string>();};
 
     /**
      *  Envía el mensaje de login al servidor
@@ -49,7 +50,6 @@ public:
 
 
     void to_bin();
-
     int from_bin(char * bobj);
 
 private:
@@ -58,15 +58,30 @@ private:
      * Socket para comunicar con el servidor
      */
     Socket socket;
-
+    /**
+     * Booleano que representa si es el turno del jugador
+     */
     bool isMyTurn;
 
     /**
      * Nick del usuario
      */
     std::string nick;
+    /**
+     * Representa la posicion del jugador en el array de casillas
+     */
     int indexPosition;
+    /**
+     * Representa la posicion del player en el array de jugadores del servidor
+     */
     int indexPlayer=-1;
-    int dinero;
+    /**
+     * Dinero del jugador
+     */
+    int money;
+    /**
+     * 
+     */
+    std::unordered_map<int,std::string> playerProperties;
 };
 #endif

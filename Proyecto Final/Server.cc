@@ -74,9 +74,9 @@ void Server::input_thread(){
     }
 }
 void Server::initTablero(){
-    tablero = std::vector<std::unique_ptr<Casilla>>(40);
+    tablero = std::vector<Casilla*>(40);
     for(int i=0; i<40;i++){
-        tablero[i] = std::unique_ptr<Casilla>();
+        tablero[i] = new Casilla();
     }
 }
 void Server::initPlayers(){
