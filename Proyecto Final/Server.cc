@@ -1,15 +1,13 @@
 #include "Server.h"
 #include <random>
 #include "Message.h"
-void Server::init(){
-    initTablero();
-}
+
 void Server::do_messages(){
    while (true){
         Message tmpMessage;      
         //Recibir Mensajes en y en socketfunción del tipo de mensaje
         Socket* socket_cliente;
-        socket.recv(tmpMessage, socket_cliente);                      
+        socket.recv(tmpMessage, &socket_cliente);                      
           
         // - LOGIN: Añadir al vectosocketr clients
         // - LOGOUT: Eliminar del vector clients
@@ -40,18 +38,36 @@ void Server::do_messages(){
                 std::cout<<"LOGOUT DE: "<<out.nick<<"\n";
                 break;
             }
-            case PLAYERSERIALIZABLE:{
+            case MOVER:{
                 PlayerSerializable player;
                 player.from_bin(tmpMessage.data());
                 players[player.indexPlayer]=player;
-                std::cout<<"Player se ha movido: "<<player.indexPosition<<"\n";
+                std::cout<<"Player se ha movido: "<<player.indexPosition<<"\n";                
+
+                movementConsequences(player.indexPlayer);
                 break;
             }
-            case ENDTURN:{
+            case COMPRADA:{ // actualizar el estado del tablero
+                ComprarCalleMsg comprar;
+                comprar.from_bin(tmpMessage.data());
+                players[turnos[indexTurno]].dinero-=comprar.buyPrice;
+                comprarCasilla(comprar);
+                break;
+            }
+            case PAGADO:{ //cuando el jugador paga puede terminar su turno
+                canFinishTurn=true;
+                Message canFinish;
+                canFinish.setType(CANENDTURN);
+                socket.send(canFinish, *socketsPlayers[turnos[indexTurno]]);
+                break;
+            }
+            case ENDTURN:{ 
+                canFinishTurn=false;
                 indexTurno =indexTurno+1 % turnos.size();               
                 Message initturno;
                 initturno.setType(INITURN);
                 socket.send(initturno, *socketsPlayers[turnos[indexTurno]]);
+                break;
             }
         }
         //}
@@ -60,7 +76,7 @@ void Server::do_messages(){
         //    player.from_bin(tmp.data());
         //}
     }
-}
+};
 
 void Server::input_thread(){
     while(true){
@@ -72,7 +88,7 @@ void Server::input_thread(){
             initPlayers();
         }
     }
-}
+};
 void Server::initTablero(){
     tablero = std::vector<Casilla*>(40);
     for(int i=0; i<40;i++){
@@ -117,7 +133,8 @@ void Server::initTablero(){
     tablero[37]= new Calle("Paseo De La Castellana",Type::CALLE,std::vector<int>({35,175,500,1100,1300,1500}),350,175,200,std::vector<int>({39}));
     tablero[39]= new Calle("Paseo Del Prado",Type::CALLE,std::vector<int>({50,200,600,1400,1700,2000}),400,200,200,std::vector<int>({37}));
 
-}
+};
+
 void Server::initPlayers(){
     onGame=true;
     int max=socketsPlayers.size();
@@ -139,4 +156,54 @@ void Server::initPlayers(){
     initturno.setType(INITURN);
     socket.send(initturno, *socketsPlayers[turnos[indexTurno]]);
     std::cout<<"ENVIADO TURNO A: "<<turnos[indexTurno]<<"\n";
+};
+
+void Server::movementConsequences(int indexPlayer){
+    int posPlayer= players[indexPlayer].indexPosition;
+
+    switch (tablero[posPlayer]->getType()){
+        case CALLE:{
+            Calle* calle = dynamic_cast<Calle*>(tablero[posPlayer]);
+            
+            if(calle->getProperty()==-1){ //Se puede Comprar
+
+                canFinishTurn=true;
+                Message canFinish;               
+                canFinish.setType(CANENDTURN);
+                socket.send(canFinish, *socketsPlayers[turnos[indexTurno]]);
+
+                ComprarCalleMsg comprarMsg(calle->getName(),indexPlayer,calle->getPrice());
+                comprarMsg.setType(COMPRAR);
+                socket.send(comprarMsg, *socketsPlayers[turnos[indexTurno]]);
+                std::cout<<"SOLICITUD DE COMPRA ENVIADA A PLAYER: "<<players[indexPlayer].nick<<"\n";
+            }
+            else if(calle->getProperty()!=indexPlayer){ //La tiene alguien
+
+            }
+            else std::cout<<"LA CALLE YA ES PROPIEDAD DEL PLAYER "<<players[indexPlayer].nick<<"\n";
+            
+            break;
+        }
+        default: {//TEMPORAL HAY QUITARLO ESTO ES SOLO PARA Q LAS CASILLAS EN LAS K ACTUIALMENTE NO HAY NADA SE PUEDA ACABAR TURNO
+            canFinishTurn=true;
+            Message canFinish;               
+            canFinish.setType(CANENDTURN);
+            socket.send(canFinish, *socketsPlayers[turnos[indexTurno]]);
+            break;
+        }
+       
+    }
+
+};
+
+void Server::comprarCasilla(ComprarCalleMsg comprar){
+    int indexplayer= turnos[indexTurno];
+    switch (tablero[comprar.indexCasilla]->getType()){
+        case CALLE:{
+            Calle* calle = dynamic_cast<Calle*>(tablero[comprar.indexCasilla]);
+            calle->setProperty(indexplayer);
+            std::cout<<"CASILLA COMPRADA POR "<<players[indexplayer].nick<<"\n";
+            break;           
+        }
+    }
 }

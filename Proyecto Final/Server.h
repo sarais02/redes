@@ -17,7 +17,6 @@ public:
     Server(const char * s, const char * p): socket(s, p){
         socket.bind();
     };
-    void init();
     /**
      *  Thread principal del servidor recive mensajes en el socket y
      *  lo distribuye a los clientes. Mantiene actualizada la lista de clientes
@@ -54,6 +53,11 @@ private:
      */
     bool onGame=false;
     /**
+     * booleano para ver si el jugador ya ha tirado los dados
+     */
+    bool canFinishTurn=false;
+    
+    /**
      * Inicializa las casillas del tablero 
     */
     void initTablero();
@@ -61,5 +65,13 @@ private:
     * Sincroniza todos los players de cara a empezar la partida y Randomizar los turnos
     */
     void initPlayers();
+    /**
+    * Consequencias del movimiento del jugador
+    */
+    void movementConsequences(int indexPlayer);
+     /**
+    * actualizar el estado del tablero al comprar una casilla
+    */
+    void comprarCasilla(ComprarCalleMsg comprar);
 };
 #endif

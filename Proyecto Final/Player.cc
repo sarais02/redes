@@ -30,7 +30,7 @@ void Player::input_thread(){
             break;
         }
         if(isMyTurn){
-            if(msg=="t"){                               
+            if(msg=="t"){ //TIRAR DADOS                              
                 int dado1= std::rand() %6 + 1;
                 indexPosition+=dado1;
                 int dado2= std::rand() %6 + 1;
@@ -38,15 +38,22 @@ void Player::input_thread(){
                 indexPosition%=39;               
                 std::cout<<"Tiro: "<<dado1<<" "<<dado2<<"\n";
                 std::cout<<"IndexPosition: "<<indexPosition<<"\n";              
-                PlayerSerializable player(nick,indexPosition,money,indexPlayer);
+                PlayerSerializable player(nick,indexPosition,money,indexPlayer);//POR DEFECTO ES MOVER EL TIPO DE MENSAJE PLAYERSERIALIZABLE
                 socket.send(player,socket);
             }
-            if(msg=="e"){
+            if(msg=="e"&&canFinishMyTurn){ //SI PUEDO ACABAR TURNO
                 std::cout<<"Acabo Mi Turno\n";
                 Message initturno;
                 initturno.setType(ENDTURN);
                 socket.send(initturno, socket);
                 isMyTurn=false;
+            }
+            if(msg=="e"&&!canFinishMyTurn)std::cout<<"No puedes acabar tu turno\n";
+
+            if(msg=="c"&&canBuySomething&&compra.buyPrice<=money){ //SI PUEDO COMPRAR 
+                compra.setType(COMPRADA);
+                socket.send(compra,socket);                
+                money-=compra.buyPrice;             
             }
         }
         
@@ -61,7 +68,7 @@ void Player::net_thread(){
         socket.recv(tmpMessage);
 
         switch (tmpMessage.getType()){
-            case PLAYERSERIALIZABLE:{
+            case MOVER:{
                 PlayerSerializable playerMSG;
                 playerMSG.from_bin(tmpMessage.data());
                 if(playerMSG.indexPlayer==indexPlayer || indexPlayer==-1){
@@ -75,7 +82,22 @@ void Player::net_thread(){
             case INITURN:{
                 std::cout<<"MI TURNO\n";
                 isMyTurn=true;
-            }          
+                canFinishMyTurn=false;              
+                break;
+            }
+            case CANENDTURN:{
+                std::cout<<"PUEDO TERMINAR MI TURNO\n";
+                canFinishMyTurn=true;
+                break;
+            } 
+            case COMPRAR:{
+                compra = ComprarCalleMsg();
+                canBuySomething=true;
+                compra.from_bin(tmpMessage.data());
+                //GUARDARME LO K PUEDO COMPRAR
+                std::cout<<"Quieres comprar "<<compra.nombre<<" por "<<compra.buyPrice<<"?";
+                break;
+            }        
         }        
     }
 }

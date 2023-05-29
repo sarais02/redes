@@ -3,33 +3,39 @@
 #include "Serializable.h"
 #include "Socket.h"
 
-Socket::Socket(const char * address, const char * port):sd(-1)
-{
+Socket::Socket(const char * address, const char * port):sd(-1){
+
     //Construir un socket de tipo AF_INET y SOCK_DGRAM usando getaddrinfo.
     struct addrinfo hints;
-    struct addrinfo* result;
-    
+    struct addrinfo* result;   
+
     memset(&hints, 0, sizeof(struct addrinfo));
+
     hints.ai_family=AF_INET;
     hints.ai_socktype=SOCK_DGRAM;
 
     int rc =getaddrinfo(address, port, &hints, &result);
+
     if(rc!=0){
         std::cout<<"ERROR"<< std::endl;
         return;
     }
+
     //Con el resultado inicializar los miembros sd, sa y sa_len de la clase
+
     sd=socket(result->ai_family, result->ai_socktype, result->ai_protocol);
     if(sd==-1){
         std::cout<<"ERROR creating socket"<< std::endl;
         return;
     }
+
     sa = (*result->ai_addr);
     sa_len = result->ai_addrlen;
 }
 
-int Socket::recv(Serializable &obj, Socket * &sock)
-{
+
+
+int Socket::recv(Serializable &obj, Socket ** sock){
     struct sockaddr sa;
     socklen_t sa_len = sizeof(struct sockaddr);
 
@@ -41,9 +47,9 @@ int Socket::recv(Serializable &obj, Socket * &sock)
     }
     //std::cout<<"bytes es:" << bytes<< std::endl; 
     //std::cout<<"antes sock es:" << sock<< std::endl;  
-    if ( sock ==0 )
+    if ( sock !=0 )
     {    
-        sock = new Socket(&sa, sa_len);
+        *sock = new Socket(&sa, sa_len);
         //std::cout<<"sock es:" << sock<< std::endl;
     }
 

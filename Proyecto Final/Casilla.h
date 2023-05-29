@@ -19,7 +19,7 @@ public:
     ~Casilla(){};
     
     inline u_int8_t getType(){return myType;};   
-
+    inline std::string getName(){return name;};
     //Cuando llegue un jugador a esa casilla que tiene que pasar
     virtual void getSomething(){};
 
@@ -47,7 +47,8 @@ public:
 
     inline int getPrice(){return buyPrice;};
     inline int getProperty(){return property;};
-
+    inline void setProperty(int index){property=index;};    
+    inline int rentCost(){return rentPrices[indexRentPrices];};
     void getSomething() override;
 };
 #endif

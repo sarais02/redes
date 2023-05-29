@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MESSAGE_H_
 #define MESSAGE_H_
 
@@ -13,9 +14,14 @@ enum TypesMessages : u_int8_t {
     EMPTY=0,
     LOGIN=1,
     LOGOUT=2,
-    PLAYERSERIALIZABLE=3,
+    MOVER=3,
     INITURN=4,
-    ENDTURN=5
+    ENDTURN=5,
+    COMPRAR=6,
+    COMPRADA=7,
+    PAGAR=8,
+    PAGADO=9,
+    CANENDTURN=10
 };
 class Message:public Serializable{
 public:
@@ -60,7 +66,7 @@ public:
 
 /**
  *  Mensaje del protocolo de la aplicación 
- *
+ *  EL TIPO DE MENSAJE
  *  +-------------------+
  *  | Nick: char[8]     | Nick incluido el char terminación de cadena '\0'
  *  +-------------------+
@@ -79,8 +85,8 @@ public:
 class PlayerSerializable: public Message{
 public:
     static const size_t MESSAGE_SIZE = sizeof(uint8_t) + sizeof(char) * 8 + sizeof(int16_t) * 3;
-
-    PlayerSerializable():Message(){type=PLAYERSERIALIZABLE;};
+    //PLAYER SERIALIZABLE POR DEFECTO TIENE EL TIPO DE MENSAJE MOVER
+    PlayerSerializable():Message(){type=MOVER;};
     PlayerSerializable(std::string Nick, int16_t IndexPosition, int16_t Dinero, int16_t IndexPlayer);
 
     void to_bin() override;
@@ -90,5 +96,22 @@ public:
     int16_t indexPosition;
     int16_t indexPlayer;
     int16_t dinero;
+};
+
+//OBJECTIVO DE ESTE TIPO DE MENSAJES ES EL INTERCAMBIO DE INFORMACION EN EL TRANSCURSO DE COMPRAR UNA PROPIEDAD
+class ComprarCalleMsg: public Message{
+public:
+    static const size_t MESSAGE_SIZE = sizeof(uint8_t) + sizeof(char) * 48 + sizeof(int16_t)*2;
+    //PLAYER SERIALIZABLE POR DEFECTO TIENE EL TIPO DE MENSAJE MOVER
+    ComprarCalleMsg():Message(){type=COMPRAR;};
+    ComprarCalleMsg(std::string Nombre, int16_t IndexCasilla, int16_t BuyPrice);
+
+    void to_bin() override;
+    int from_bin(char * bobj) override;
+
+    std::string nombre;//MAXIMO APROXIMADO 48 CARACTERES POR CALLE ("casi todas menos pero por si acaso")
+    int16_t buyPrice;
+    int16_t indexCasilla;
+
 };
 #endif

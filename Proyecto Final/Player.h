@@ -8,10 +8,10 @@
 #include <memory>
 #include <unordered_map>
 
+#include "Casilla.h"
 #include "Serializable.h"
 #include "Socket.h"
-#include "Casilla.h"
-
+#include "Message.h"
 
 /**
  *  Clase para el cliente de chat
@@ -62,7 +62,22 @@ private:
      * Booleano que representa si es el turno del jugador
      */
     bool isMyTurn;
-
+     /**
+     * Booleano que representa si el jugador puede terminar su turno
+     */
+    bool canFinishMyTurn=false;
+    /**
+     * Booleano que representa si el jugador puede comprar una casilla
+     */
+    bool canBuySomething;
+    /**
+     * Lo que me puedo Comprar
+     */
+    ComprarCalleMsg compra;
+    /**
+     * Booleano que representa si el jugador debe pagar a alguien
+     */
+    bool needToPay;
     /**
      * Nick del usuario
      */

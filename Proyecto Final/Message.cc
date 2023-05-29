@@ -63,7 +63,7 @@ int IN_OUT::from_bin(char * bobj){
 
 PlayerSerializable::PlayerSerializable(std::string Nick, int16_t IndexPosition, int16_t Dinero, int16_t IndexPlayer):
     nick(Nick),indexPosition(IndexPosition),indexPlayer(IndexPlayer),dinero(Dinero){
-        type=PLAYERSERIALIZABLE;
+        type=MOVER;
     };
 
 void PlayerSerializable::to_bin(){
@@ -104,5 +104,47 @@ int PlayerSerializable::from_bin(char * bobj){
     buffer+=sizeof(int16_t);
     memcpy(&indexPlayer, buffer, sizeof(int16_t)); 
 
+    return 0;
+}
+
+ComprarCalleMsg::ComprarCalleMsg(std::string Nombre, int16_t IndexCasilla, int16_t BuyPrice):nombre(Nombre),indexCasilla(IndexCasilla),buyPrice(BuyPrice){
+}
+
+void ComprarCalleMsg::to_bin(){
+    alloc_data(MESSAGE_SIZE);
+
+    memset(_data, 0, MESSAGE_SIZE);
+    //Serializar los campos type, nick y message en el buffer _data
+    char* tmp = _data;
+    memcpy(tmp, &type, sizeof(uint8_t));
+    tmp += sizeof(uint8_t);
+    
+    memcpy(tmp, nombre.c_str(), sizeof(char)* 48);   
+    tmp += sizeof(char) * 48;
+
+    memcpy(tmp, &indexCasilla, sizeof(int16_t));
+    tmp += sizeof(int16_t);
+
+    memcpy(tmp, &buyPrice, sizeof(int16_t));
+
+
+}
+int ComprarCalleMsg::from_bin(char * bobj){
+    alloc_data(MESSAGE_SIZE);
+    memcpy(static_cast<void*>(_data), bobj, MESSAGE_SIZE); 
+    //Reconstruir la clase usando el buffer _data
+    char* buffer = _data;
+    memcpy(&type, buffer, sizeof(uint8_t)); 
+    buffer += sizeof(uint8_t);
+
+    char nick_buffer[48]; 
+    memcpy(&nick_buffer, buffer, 48 * sizeof(char)); 
+    nombre = std::string(nick_buffer); 
+    buffer += 48* sizeof(char);
+
+    memcpy(&indexCasilla, buffer, sizeof(int16_t));
+    buffer+=sizeof(int16_t);
+
+    memcpy(&buyPrice, buffer, sizeof(int16_t));
     return 0;
 }
