@@ -32,10 +32,15 @@ void Player::input_thread(){
         if(isMyTurn){
             if(msg=="t"){ //TIRAR DADOS                              
                 int dado1= std::rand() %6 + 1;
-                indexPosition+=dado1;
                 int dado2= std::rand() %6 + 1;
-                indexPosition+=dado2;
-                indexPosition%=39;               
+                int suma=dado1+dado2+indexPosition;
+                suma%=39;
+                if(suma<indexPosition){
+                    PlayerSerializable player(nick,0,money,indexPlayer);//Muevo al jugador a la salida
+                    socket.send(player,socket);
+                }
+                indexPosition=suma;
+                //indexPosition%=39;               
                 std::cout<<"Tiro: "<<dado1<<" "<<dado2<<"\n";
                 std::cout<<"IndexPosition: "<<indexPosition<<"\n";              
                 PlayerSerializable player(nick,indexPosition,money,indexPlayer);//POR DEFECTO ES MOVER EL TIPO DE MENSAJE PLAYERSERIALIZABLE
@@ -97,7 +102,21 @@ void Player::net_thread(){
                 //GUARDARME LO K PUEDO COMPRAR
                 std::cout<<"Quieres comprar "<<compra.nombre<<" por "<<compra.buyPrice<<"?";
                 break;
-            }        
+            } 
+            case PAGAR:{
+                PagarMsg pagar;
+                pagar.from_bin(tmpMessage.data());
+                money-=pagar.buyPrice;
+                std::cout<<"Pagas "<<pagar.buyPrice<<" de impuestos\n ";
+                break;
+            }
+            case COBRAR:{
+                PagarMsg cobra;
+                cobra.from_bin(tmpMessage.data());
+                money+=cobra.buyPrice;
+                std::cout<<"Cobras "<<cobra.buyPrice<<" por pasar por la salida\n ";
+                break;
+            }   
         }        
     }
 }

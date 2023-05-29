@@ -21,7 +21,8 @@ enum TypesMessages : u_int8_t {
     COMPRADA=7,
     PAGAR=8,
     PAGADO=9,
-    CANENDTURN=10
+    CANENDTURN=10,
+    COBRAR=11
 };
 class Message:public Serializable{
 public:
@@ -113,5 +114,17 @@ public:
     int16_t buyPrice;
     int16_t indexCasilla;
 
+};
+class PagarMsg: public Message{
+public:
+    static const size_t MESSAGE_SIZE = sizeof(uint8_t)+ sizeof(int16_t);
+    //PLAYER SERIALIZABLE POR DEFECTO TIENE EL TIPO DE MENSAJE MOVER
+    PagarMsg():Message(){type=PAGAR;};
+    PagarMsg(int16_t BuyPrice);
+
+    void to_bin() override;
+    int from_bin(char * bobj) override;
+   
+    int16_t buyPrice;
 };
 #endif

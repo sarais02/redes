@@ -69,6 +69,7 @@ void Server::do_messages(){
                 socket.send(initturno, *socketsPlayers[turnos[indexTurno]]);
                 break;
             }
+            
         }
         //}
         //else if(tmp.size()==PlayerSerializable::MESSAGE_SIZE){
@@ -83,9 +84,12 @@ void Server::input_thread(){
         std::string msg;
         std::getline(std::cin,msg);      
         if(msg=="start"&&!onGame){
-            
-            initTablero();
-            initPlayers();
+            //if (players.size()<=1) std::cout<<"Se necesita mas de 1 jugador para empezar\n";
+            //else{
+                onGame=true;
+                initTablero();
+                initPlayers();
+            //}
         }
     }
 };
@@ -95,10 +99,14 @@ void Server::initTablero(){
         tablero[i] = new Casilla();
     }
     
-    delete tablero[0]; delete tablero[1];
+    delete tablero[0]; 
+    tablero[0]=new Salida("Salida", Type::SALIDA, 200);
+    delete tablero[1];
     tablero[1]= new Calle("Ronda De Valencia",Type::CALLE,std::vector<int>({2,10,30,90,160,250}),60,30,50,std::vector<int>({3}));
     tablero[3]= new Calle("Plaza Lavapies",Type::CALLE,std::vector<int>({4,20,60,180,320,450}),60,30,50,std::vector<int>({1}));
     
+    delete tablero[4];
+    tablero[4]=new Impuesto("Impuesto sobre el capital", Type::IMPUESTO, 200);
     delete tablero[6]; delete tablero[8];delete tablero[9];
     tablero[6]= new Calle("Glorieta Cuatro Caminos",Type::CALLE,std::vector<int>({6,30,90,270,400,550}),100,50,50,std::vector<int>({8,9}));
     tablero[8]= new Calle("Avenida Reina Victoria",Type::CALLE,std::vector<int>({6,30,90,270,400,550}),100,50,50,std::vector<int>({6,9}));
@@ -129,14 +137,15 @@ void Server::initTablero(){
     tablero[28]= new Calle("Calle Alcala",Type::CALLE,std::vector<int>({26,130,390,900,1100,1275}),300,150,200,std::vector<int>({26,29}));
     tablero[29]= new Calle("Gran Via",Type::CALLE,std::vector<int>({28,150,450,1000,1200,1400}),320,160,200,std::vector<int>({26,28}));
 
-    delete tablero[37]; delete tablero[39];
+    delete tablero[37]; delete tablero[38]; delete tablero[39];
     tablero[37]= new Calle("Paseo De La Castellana",Type::CALLE,std::vector<int>({35,175,500,1100,1300,1500}),350,175,200,std::vector<int>({39}));
+    tablero[38] = new Impuesto("Impuesto de lujo", Type::IMPUESTO, 100);
     tablero[39]= new Calle("Paseo Del Prado",Type::CALLE,std::vector<int>({50,200,600,1400,1700,2000}),400,200,200,std::vector<int>({37}));
 
 };
 
 void Server::initPlayers(){
-    onGame=true;
+    
     int max=socketsPlayers.size();
     turnos = std::vector<int>(max,-1);
     for (int i = 0; i < max; i++){
@@ -182,6 +191,32 @@ void Server::movementConsequences(int indexPlayer){
             }
             else std::cout<<"LA CALLE YA ES PROPIEDAD DEL PLAYER "<<players[indexPlayer].nick<<"\n";
             
+            break;
+        }
+        case IMPUESTO:{
+            Impuesto* impuesto=dynamic_cast<Impuesto*>(tablero[posPlayer]);
+            PagarMsg p(impuesto->getPrice());
+            p.setType(PAGAR);
+            socket.send(p, *socketsPlayers[turnos[indexTurno]]);
+            std::cout<<"EL JUGADOR: "<<players[indexPlayer].nick<<" DEBE PAGAR: " << impuesto->getName() << "\n";
+
+            canFinishTurn=true;
+            Message canFinish;               
+            canFinish.setType(CANENDTURN);
+            socket.send(canFinish, *socketsPlayers[turnos[indexTurno]]);
+            break;
+        }
+        case SALIDA:{
+            Salida* salida=dynamic_cast<Salida*>(tablero[posPlayer]);
+            PagarMsg p(salida->getReward());
+            p.setType(COBRAR);
+            socket.send(p, *socketsPlayers[turnos[indexTurno]]);
+            std::cout<<"EL JUGADOR: "<<players[indexPlayer].nick<<" COBRA: " << salida->getReward() << "\n";
+            
+            canFinishTurn=true;
+            Message canFinish;               
+            canFinish.setType(CANENDTURN);
+            socket.send(canFinish, *socketsPlayers[turnos[indexTurno]]);
             break;
         }
         default: {//TEMPORAL HAY QUITARLO ESTO ES SOLO PARA Q LAS CASILLAS EN LAS K ACTUIALMENTE NO HAY NADA SE PUEDA ACABAR TURNO

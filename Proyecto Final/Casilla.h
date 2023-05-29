@@ -51,4 +51,24 @@ public:
     inline int rentCost(){return rentPrices[indexRentPrices];};
     void getSomething() override;
 };
+
+class Impuesto: public Casilla{
+    int16_t taxes;
+
+public:
+    Impuesto(std::string name,u_int8_t type, int16_t taxes_);
+    ~Impuesto()=default;
+
+    inline int16_t getPrice(){return taxes;};
+};
+
+class Salida: public Casilla{
+    int16_t reward;
+
+public:
+    Salida(std::string name,u_int8_t type, int16_t reward_);
+    ~Salida()=default;
+
+    inline int16_t getReward(){return reward;};
+};
 #endif

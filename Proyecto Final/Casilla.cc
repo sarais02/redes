@@ -15,3 +15,10 @@ Casilla(namee,type),rentPrices(prices),mortgage(mortgagee),housePrice(house),buy
 void Calle::getSomething(){
     
 }
+
+Impuesto::Impuesto(std::string name_,u_int8_t type_, int16_t taxes_): Casilla(name_, type_), taxes(taxes_){
+
+}
+Salida::Salida(std::string name_,u_int8_t type_, int16_t reward_): Casilla(name_, type_), reward(reward_){
+
+}
