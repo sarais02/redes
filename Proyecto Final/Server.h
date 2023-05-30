@@ -69,9 +69,14 @@ private:
     * Consequencias del movimiento del jugador
     */
     void movementConsequences(int indexPlayer);
-     /**
+    /**
     * actualizar el estado del tablero al comprar una casilla
     */
-    void comprarCasilla(ComprarCalleMsg comprar);
+    void comprarCasilla();
+    /**
+    * Poner Casa
+    */
+    bool tryPonerCasas(int indexPosition,int numCasas);
+    bool tengoColor(int indexPosition);
 };
 #endif

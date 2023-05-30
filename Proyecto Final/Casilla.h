@@ -4,7 +4,7 @@
 #include <vector>
 
 //Enum para ver el tipo de casilla
-enum Type: u_int8_t{NOTHING=0,CALLE=1,CARCEL=2,SUERTE=3,COMUNIDAD=4,IMPUESTO=5,SALIDA=6};
+enum Type: u_int8_t{NOTHING=0,CALLE=1,CARCEL=2,SUERTE=3,COMUNIDAD=4,IMPUESTO=5,SALIDA=6,ESTACION=7,SERVICIOS=8};
 
 class Casilla{
 protected:
@@ -47,9 +47,12 @@ public:
 
     inline int getPrice(){return buyPrice;};
     inline int getProperty(){return property;};
+    inline int getHousePrice(){return housePrice;};
     inline void setProperty(int index){property=index;};    
     inline int rentCost(){return rentPrices[indexRentPrices];};
+    inline std::vector<int> getFamily(){return familyColors;};
     void getSomething() override;
+    void setRentIndex(int num);
 };
 
 class Impuesto: public Casilla{

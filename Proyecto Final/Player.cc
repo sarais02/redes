@@ -1,4 +1,6 @@
 #include "Player.h"
+#include <cstdlib>
+#include <ctime>
 #include "Message.h"
 
 void Player::login(){
@@ -19,6 +21,7 @@ void Player::logout(){
 }
 
 void Player::input_thread(){
+    std::srand(std::time(0));
     while (true)
     {
         // Leer stdin con std::getline
@@ -30,11 +33,11 @@ void Player::input_thread(){
             break;
         }
         if(isMyTurn){
-            if(msg=="t"){ //TIRAR DADOS                              
-                int dado1= std::rand() %6 + 1;
-                int dado2= std::rand() %6 + 1;
+            if(msg=="t"&&!canFinishMyTurn){ //TIRAR DADOS                              
+                int dado1= /*std::rand() %6 + 1*/5;
+                int dado2= /*std::rand() %6 + 1*/0;
                 int suma=dado1+dado2+indexPosition;
-                suma%=39;
+                suma%=40;
                 if(suma<indexPosition){
                     PlayerSerializable player(nick,0,money,indexPlayer);//Muevo al jugador a la salida
                     socket.send(player,socket);
@@ -52,13 +55,15 @@ void Player::input_thread(){
                 initturno.setType(ENDTURN);
                 socket.send(initturno, socket);
                 isMyTurn=false;
+                canBuySomething=false;
             }
             if(msg=="e"&&!canFinishMyTurn)std::cout<<"No puedes acabar tu turno\n";
 
-            if(msg=="c"&&canBuySomething&&compra.buyPrice<=money){ //SI PUEDO COMPRAR 
-                compra.setType(COMPRADA);
+            if(msg=="c" && canBuySomething && compra.buyPrice<=money){ //SI PUEDO COMPRAR 
+                canBuySomething=false;
                 socket.send(compra,socket);                
-                money-=compra.buyPrice;             
+                money-=compra.buyPrice;
+                std::cout<<"Calle Comprada\n";                             
             }
         }
         
@@ -100,7 +105,8 @@ void Player::net_thread(){
                 canBuySomething=true;
                 compra.from_bin(tmpMessage.data());
                 //GUARDARME LO K PUEDO COMPRAR
-                std::cout<<"Quieres comprar "<<compra.nombre<<" por "<<compra.buyPrice<<"?";
+                std::cout<<compra.indexCasilla<<"\n";
+                std::cout<<"Quieres comprar "<<compra.nombre<<" por "<<compra.buyPrice<<"? PRESS C TO BUY \n";
                 break;
             } 
             case PAGAR:{

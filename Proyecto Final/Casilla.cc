@@ -1,5 +1,5 @@
 #include "Casilla.h"
-
+#include <iostream>
 Casilla::Casilla(std::string namee, u_int8_t type):name(namee),myType(type){  
 };
 
@@ -13,6 +13,15 @@ Casilla(namee,type),rentPrices(prices),mortgage(mortgagee),housePrice(house),buy
 };
 
 void Calle::getSomething(){
+    
+}
+
+void Calle::setRentIndex(int num){
+    if(num>rentPrices.size()){
+        std::cout<<"CALLE CON EL NUMERO MAXIMO DE CASAS\n";
+        num= rentPrices.size();
+    }
+    indexRentPrices=num;
     
 }
 

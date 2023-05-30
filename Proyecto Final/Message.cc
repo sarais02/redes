@@ -119,8 +119,8 @@ void ComprarCalleMsg::to_bin(){
     memcpy(tmp, &type, sizeof(uint8_t));
     tmp += sizeof(uint8_t);
     
-    memcpy(tmp, nombre.c_str(), sizeof(char)* 48);   
-    tmp += sizeof(char) * 48;
+    memcpy(tmp, nombre.c_str(), sizeof(char)* 24);   
+    tmp += sizeof(char) * 24;
 
     memcpy(tmp, &indexCasilla, sizeof(int16_t));
     tmp += sizeof(int16_t);
@@ -135,10 +135,10 @@ int ComprarCalleMsg::from_bin(char * bobj){
     memcpy(&type, buffer, sizeof(uint8_t)); 
     buffer += sizeof(uint8_t);
 
-    char nick_buffer[48]; 
-    memcpy(&nick_buffer, buffer, 48 * sizeof(char)); 
+    char nick_buffer[24]; 
+    memcpy(&nick_buffer, buffer, 24 * sizeof(char)); 
     nombre = std::string(nick_buffer); 
-    buffer += 48* sizeof(char);
+    buffer += 24* sizeof(char);
 
     memcpy(&indexCasilla, buffer, sizeof(int16_t));
     buffer+=sizeof(int16_t);
@@ -166,5 +166,32 @@ int PagarMsg::from_bin(char * bobj){
     memcpy(&type, buffer, sizeof(uint8_t)); 
     buffer += sizeof(uint8_t);
     memcpy(&buyPrice, buffer, sizeof(int16_t));
+    return 0;
+}
+
+CasaMsg::CasaMsg(int16_t IndexPosition,int16_t NumCasas):indexPosition(IndexPosition),numCasas(NumCasas){
+}
+void CasaMsg::to_bin(){
+    alloc_data(MESSAGE_SIZE);
+    memset(_data, 0, MESSAGE_SIZE);
+    //Serializar los campos type, nick y message en el buffer _data
+    char* tmp = _data;
+    memcpy(tmp, &type, sizeof(uint8_t));
+    tmp += sizeof(uint8_t);
+    memcpy(tmp, &indexPosition, sizeof(int16_t));
+    tmp += sizeof(uint16_t);
+    memcpy(tmp, &numCasas, sizeof(int16_t));
+}
+int CasaMsg::from_bin(char * bobj){
+    alloc_data(MESSAGE_SIZE);
+    memcpy(static_cast<void*>(_data), bobj, MESSAGE_SIZE); 
+    //Reconstruir la clase usando el buffer _data
+    char* buffer = _data;
+    memcpy(&type, buffer, sizeof(uint8_t)); 
+    buffer += sizeof(uint8_t);
+    memcpy(&indexPosition, buffer, sizeof(int16_t));
+    buffer += sizeof(int16_t);
+    memcpy(&numCasas, buffer, sizeof(int16_t));
+    buffer += sizeof(int16_t);
     return 0;
 }

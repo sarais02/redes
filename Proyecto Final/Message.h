@@ -1,4 +1,3 @@
-#pragma once
 #ifndef MESSAGE_H_
 #define MESSAGE_H_
 
@@ -18,11 +17,11 @@ enum TypesMessages : u_int8_t {
     INITURN=4,
     ENDTURN=5,
     COMPRAR=6,
-    COMPRADA=7,
     PAGAR=8,
     PAGADO=9,
     CANENDTURN=10,
-    COBRAR=11
+    COBRAR=11,
+    CASA=12
 };
 class Message:public Serializable{
 public:
@@ -102,7 +101,7 @@ public:
 //OBJECTIVO DE ESTE TIPO DE MENSAJES ES EL INTERCAMBIO DE INFORMACION EN EL TRANSCURSO DE COMPRAR UNA PROPIEDAD
 class ComprarCalleMsg: public Message{
 public:
-    static const size_t MESSAGE_SIZE = sizeof(uint8_t) + sizeof(char) * 48 + sizeof(int16_t)*2;
+    static const size_t MESSAGE_SIZE = sizeof(uint8_t) + sizeof(char) * 24 + sizeof(int16_t)*2;
     //PLAYER SERIALIZABLE POR DEFECTO TIENE EL TIPO DE MENSAJE MOVER
     ComprarCalleMsg():Message(){type=COMPRAR;};
     ComprarCalleMsg(std::string Nombre, int16_t IndexCasilla, int16_t BuyPrice);
@@ -110,11 +109,12 @@ public:
     void to_bin() override;
     int from_bin(char * bobj) override;
 
-    std::string nombre;//MAXIMO APROXIMADO 48 CARACTERES POR CALLE ("casi todas menos pero por si acaso")
+    std::string nombre;//MAXIMO APROXIMADO 24 CARACTERES POR CALLE ("casi todas menos pero por si acaso")
     int16_t buyPrice;
     int16_t indexCasilla;
 
 };
+
 class PagarMsg: public Message{
 public:
     static const size_t MESSAGE_SIZE = sizeof(uint8_t)+ sizeof(int16_t);
@@ -126,5 +126,20 @@ public:
     int from_bin(char * bobj) override;
    
     int16_t buyPrice;
+};
+
+class CasaMsg: public Message{
+public:
+    static const size_t MESSAGE_SIZE = sizeof(uint8_t)+ sizeof(int16_t)*2;
+    //PLAYER SERIALIZABLE POR DEFECTO TIENE EL TIPO DE MENSAJE MOVER
+    CasaMsg():Message(){type=CASA;};
+    CasaMsg(int16_t IndexPosition,int16_t NumCasas);
+
+    void to_bin() override;
+    int from_bin(char * bobj) override;
+   
+    int16_t indexPosition;
+    int16_t numCasas;
+    std::string msgResponse;
 };
 #endif

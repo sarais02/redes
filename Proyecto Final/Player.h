@@ -61,11 +61,11 @@ private:
     /**
      * Booleano que representa si es el turno del jugador
      */
-    bool isMyTurn;
+    bool isMyTurn = false;
      /**
      * Booleano que representa si el jugador puede terminar su turno
      */
-    bool canFinishMyTurn=false;
+    bool canFinishMyTurn = false;
     /**
      * Booleano que representa si el jugador puede comprar una casilla
      */
