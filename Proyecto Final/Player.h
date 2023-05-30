@@ -95,8 +95,12 @@ private:
      */
     int money;
     /**
-     * 
+     * Contador de turnos en la carcel
      */
+    int cont=0;
+    //
+    bool isInJail=false;
+    int moneyToPay;
     std::unordered_map<int,std::string> playerProperties;
 };
 #endif

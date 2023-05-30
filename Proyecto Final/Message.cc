@@ -195,3 +195,24 @@ int CasaMsg::from_bin(char * bobj){
     buffer += sizeof(int16_t);
     return 0;
 }
+CarcelMsg::CarcelMsg(int16_t BuyPrice):buyPrice(BuyPrice){
+}
+void CarcelMsg::to_bin(){
+    alloc_data(MESSAGE_SIZE);
+    memset(_data, 0, MESSAGE_SIZE);
+    //Serializar los campos type, nick y message en el buffer _data
+    char* tmp = _data;
+    memcpy(tmp, &type, sizeof(uint8_t));
+    tmp += sizeof(uint8_t);
+    memcpy(tmp, &buyPrice, sizeof(int16_t));
+}
+int CarcelMsg::from_bin(char * bobj){
+    alloc_data(MESSAGE_SIZE);
+    memcpy(static_cast<void*>(_data), bobj, MESSAGE_SIZE); 
+    //Reconstruir la clase usando el buffer _data
+    char* buffer = _data;
+    memcpy(&type, buffer, sizeof(uint8_t)); 
+    buffer += sizeof(uint8_t);
+    memcpy(&buyPrice, buffer, sizeof(int16_t));
+    return 0;
+}

@@ -74,4 +74,14 @@ public:
 
     inline int16_t getReward(){return reward;};
 };
+
+class Carcel: public Casilla{
+    int16_t taxes;
+
+public:
+    Carcel(std::string name,u_int8_t type, int16_t taxes_);
+    ~Carcel()=default;
+
+    inline int16_t getPrice(){return taxes;};
+};
 #endif

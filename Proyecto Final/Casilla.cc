@@ -26,8 +26,8 @@ void Calle::setRentIndex(int num){
 }
 
 Impuesto::Impuesto(std::string name_,u_int8_t type_, int16_t taxes_): Casilla(name_, type_), taxes(taxes_){
-
 }
 Salida::Salida(std::string name_,u_int8_t type_, int16_t reward_): Casilla(name_, type_), reward(reward_){
-
+}
+Carcel::Carcel(std::string name_,u_int8_t type_, int16_t taxes_): Casilla(name_, type_), taxes(taxes_){
 }

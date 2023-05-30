@@ -38,7 +38,8 @@ void Player::input_thread(){
                 int dado2= /*std::rand() %6 + 1*/0;
                 int suma=dado1+dado2+indexPosition;
                 suma%=40;
-                if(suma<indexPosition){
+                if(suma<indexPosition && suma!=0) //Si suma justo es la salida no entra porq se sumaria 2 veces
+                {
                     PlayerSerializable player(nick,0,money,indexPlayer);//Muevo al jugador a la salida
                     socket.send(player,socket);
                 }
@@ -64,6 +65,20 @@ void Player::input_thread(){
                 socket.send(compra,socket);                
                 money-=compra.buyPrice;
                 std::cout<<"Calle Comprada\n";                             
+            }
+            if(msg=="s" && isInJail){
+                isInJail=false;
+                money-=moneyToPay;
+                std::cout<<"Fianza Pagada\n";
+            }
+            if(msg=="n" && isInJail){
+                std::cout<<"Te quedas en la carcel\n";
+                std::cout<<"Se acaba tu turno\n";
+                Message initturno;
+                initturno.setType(ENDTURN);
+                socket.send(initturno, socket);
+                isMyTurn=false;
+                canBuySomething=false;
             }
         }
         
@@ -91,8 +106,28 @@ void Player::net_thread(){
             }
             case INITURN:{
                 std::cout<<"MI TURNO\n";
-                isMyTurn=true;
-                canFinishMyTurn=false;              
+                if(isInJail){
+                    cont++;
+                    if(cont>3) //Si ya lleva 3 turnos en la carcel sale
+                    {
+                        cont=0;
+                        isMyTurn=true;
+                        canFinishMyTurn=false;
+                    }
+                    else //Si no acabo mi turno
+                    {
+                        isMyTurn=false;
+                        std::cout<<"Acabo Mi Turno\n";
+                        Message initturno;
+                        initturno.setType(ENDTURN);
+                        socket.send(initturno, socket);
+                        canBuySomething=false;
+                    }
+                }
+                else{
+                    isMyTurn=true;
+                    canFinishMyTurn=false;  
+                }         
                 break;
             }
             case CANENDTURN:{
@@ -113,16 +148,25 @@ void Player::net_thread(){
                 PagarMsg pagar;
                 pagar.from_bin(tmpMessage.data());
                 money-=pagar.buyPrice;
-                std::cout<<"Pagas "<<pagar.buyPrice<<" de impuestos\n ";
+                std::cout<<"Pagas "<<pagar.buyPrice<<"\n";
                 break;
             }
             case COBRAR:{
                 PagarMsg cobra;
                 cobra.from_bin(tmpMessage.data());
                 money+=cobra.buyPrice;
-                std::cout<<"Cobras "<<cobra.buyPrice<<" por pasar por la salida\n ";
+                std::cout<<"Cobras "<<cobra.buyPrice<<"\n ";
                 break;
-            }   
+            }
+            case IRACARCEL:{
+                isInJail=true;
+                cont=0;
+                CarcelMsg carcel;
+                carcel.from_bin(tmpMessage.data());
+                moneyToPay=carcel.buyPrice;
+                std::cout<<"Quieres pagar "<<moneyToPay<<
+                " para salir de la carcel? PRESS S TO ACCEPT OR N TO REJECT \n";
+            }
         }        
     }
 }

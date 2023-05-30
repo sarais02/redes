@@ -21,7 +21,8 @@ enum TypesMessages : u_int8_t {
     PAGADO=9,
     CANENDTURN=10,
     COBRAR=11,
-    CASA=12
+    CASA=12,
+    IRACARCEL=13
 };
 class Message:public Serializable{
 public:
@@ -141,5 +142,17 @@ public:
     int16_t indexPosition;
     int16_t numCasas;
     std::string msgResponse;
+};
+class CarcelMsg: public Message{
+public:
+    static const size_t MESSAGE_SIZE = sizeof(uint8_t)+ sizeof(int16_t);
+    //PLAYER SERIALIZABLE POR DEFECTO TIENE EL TIPO DE MENSAJE MOVER
+    CarcelMsg():Message(){type=IRACARCEL;};
+    CarcelMsg(int16_t BuyPrice);
+
+    void to_bin() override;
+    int from_bin(char * bobj) override;
+   
+    int16_t buyPrice;
 };
 #endif

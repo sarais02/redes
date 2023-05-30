@@ -139,7 +139,7 @@ void Server::initTablero()
     tablero[6] = new Calle("Glorieta Cuatro Caminos", Type::CALLE, std::vector<int>({6, 30, 90, 270, 400, 550}), 100, 50, 50, std::vector<int>({8, 9}));
     tablero[8] = new Calle("Avenida Reina Victoria", Type::CALLE, std::vector<int>({6, 30, 90, 270, 400, 550}), 100, 50, 50, std::vector<int>({6, 9}));
     tablero[9] = new Calle("Calle Bravo Murillo", Type::CALLE, std::vector<int>({8, 40, 100, 300, 450, 600}), 120, 60, 50, std::vector<int>({6, 8}));
-
+    //La casilla 10 es la carcel, asi que sera una casilla de ningun tipo
     delete tablero[11];
     delete tablero[13];
     delete tablero[14];
@@ -173,7 +173,8 @@ void Server::initTablero()
     tablero[26] = new Calle("Avenida De Los Reyes Catolicos", Type::CALLE, std::vector<int>({22, 110, 330, 800, 975, 1150}), 260, 130, 150, std::vector<int>({28, 29}));
     tablero[28] = new Calle("Calle Bailen", Type::CALLE, std::vector<int>({22, 110, 330, 800, 975, 1150}), 260, 130, 150, std::vector<int>({26, 29}));
     tablero[29] = new Calle("Plaza De España", Type::CALLE, std::vector<int>({24, 120, 360, 850, 1025, 1200}), 280, 140, 150, std::vector<int>({26, 28}));
-
+    delete tablero[30];
+    tablero[30]=new Carcel("Ve a la carcel", Type::CARCEL, 50);
     delete tablero[31];
     delete tablero[32];
     delete tablero[34];
@@ -231,8 +232,8 @@ void Server::movementConsequences(int indexPlayer)
     {
         Calle *calle = dynamic_cast<Calle *>(tablero[posPlayer]);
 
-        if (calle->getProperty() == -1)
-        { // Se puede Comprar
+        if (calle->getProperty() == -1) // Se puede Comprar
+        { 
 
             ComprarCalleMsg comprarMsg(calle->getName(), posPlayer, calle->getPrice());
             comprarMsg.setType(COMPRAR);
@@ -244,8 +245,24 @@ void Server::movementConsequences(int indexPlayer)
             canFinish.setType(CANENDTURN);
             socket.send(canFinish, *socketsPlayers[turnos[indexTurno]]);
         }
-        else if (calle->getProperty() != indexPlayer)
-        { // La tiene alguien
+        else if (calle->getProperty() != indexPlayer)// La tiene alguien
+        { 
+            int dinero=calle->rentCost(); //Dinero que se cobra
+            //Mensaje para cobrar al que ha caido
+            PagarMsg pagar(dinero); 
+            pagar.setType(PAGAR);
+            socket.send(pagar, *socketsPlayers[turnos[indexTurno]]);
+            std::cout << "EL JUGADOR: " << players[indexPlayer].nick << " DEBE PAGAR: " << dinero << " DE ALQUILER\n";
+            //Mensaje para que el propietario cobre
+            PagarMsg cobrar(dinero);
+            cobrar.setType(COBRAR);
+            socket.send(cobrar, *socketsPlayers[calle->getProperty()]);
+            std::cout << "EL JUGADOR: " << players[indexPlayer].nick << " DEBE PAGAR: " << dinero << " DE ALQUILER A: "<< players[calle->getProperty()].nick<<"\n";
+
+            canFinishTurn = true;
+            Message canFinish;
+            canFinish.setType(CANENDTURN);
+            socket.send(canFinish, *socketsPlayers[turnos[indexTurno]]);
         }
         else
             std::cout << "ESTA PROPIEDAD YA ES PROPIEDAD DEL PLAYER " << players[indexPlayer].nick << "\n";
@@ -274,6 +291,23 @@ void Server::movementConsequences(int indexPlayer)
         p.setType(COBRAR);
         socket.send(p, *socketsPlayers[turnos[indexTurno]]);
         std::cout << "EL JUGADOR: " << players[indexPlayer].nick << " COBRA: " << salida->getReward() << "\n";
+
+        canFinishTurn = true;
+        Message canFinish;
+        canFinish.setType(CANENDTURN);
+        socket.send(canFinish, *socketsPlayers[turnos[indexTurno]]);
+        break;
+    }
+    case CARCEL:
+    {
+        Carcel *carcel=dynamic_cast<Carcel*>(tablero[posPlayer]);
+        //Muevo al jugador a la carcel
+        PlayerSerializable player(players[indexPlayer].nick,10,players[indexPlayer].dinero,indexPlayer);
+        socket.send(player,*socketsPlayers[turnos[indexTurno]]);
+        //Mensaje de carcel
+        CarcelMsg m(carcel->getPrice()); //Dinero que cuesta salir de la carcel
+        m.setType(IRACARCEL);
+        socket.send(m,*socketsPlayers[turnos[indexTurno]]);
 
         canFinishTurn = true;
         Message canFinish;
