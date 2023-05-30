@@ -6,6 +6,7 @@
 #include <string.h>
 #include <vector>
 #include <memory>
+#include <list>
 
 #include "Socket.h"
 #include "Casilla.h"
@@ -78,5 +79,15 @@ private:
     */
     bool tryPonerCasas(int indexPosition,int numCasas);
     bool tengoColor(int indexPosition);
+    void initCartasSuerte();
+    void initCartasComunidad();
+    //CARTAS DE SUERTE
+    std::list<std::pair<std::string, int>> suerte_pagar;
+    std::list<std::pair<std::string, int>> suerte_cobrar;
+    std::list<std::pair<std::string, int>> suerte_avanzar;
+    //CARTAS DE COMUNIDAD
+    std::list<std::pair<std::string, int>> comunidad_pagar;
+    std::list<std::pair<std::string, int>> comunidad_cobrar;
+    std::list<std::pair<std::string, int>> comunidad_avanzar;
 };
 #endif

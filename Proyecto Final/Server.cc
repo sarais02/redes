@@ -108,6 +108,8 @@ void Server::input_thread()
             onGame = true;
             initTablero();
             initPlayers();
+            initCartasSuerte();
+            initCartasComunidad();
             //}
         }
     }
@@ -115,79 +117,45 @@ void Server::input_thread()
 void Server::initTablero()
 {
     tablero = std::vector<Casilla *>(40);
-    for (int i = 0; i < 40; i++)
-    {
-        tablero[i] = new Casilla();
-    }
-
-    delete tablero[0];
+    
     tablero[0] = new Salida("Salida", Type::SALIDA, 200);
-
-    delete tablero[1];
-    delete tablero[3];
     tablero[1] = new Calle("Ronda De Valencia", Type::CALLE, std::vector<int>({2, 10, 30, 90, 160, 250}), 60, 30, 50, std::vector<int>({3}));
+    tablero[2] = new Casilla("Caja de comunidad1", Type::COMUNIDAD);
     tablero[3] = new Calle("Plaza Lavapies", Type::CALLE, std::vector<int>({4, 20, 60, 180, 320, 450}), 60, 30, 50, std::vector<int>({1}));
-
-    delete tablero[4];
     tablero[4] = new Impuesto("Impuesto sobre el capital", Type::IMPUESTO, 200);
-    delete tablero[5];
     tablero[5] = new Calle("Estacion De Goya", Type::ESTACION, std::vector<int>({25, 50, 100, 200}), 200, 100, 0, std::vector<int>({15, 25, 35}));
-
-    delete tablero[6];
-    delete tablero[8];
-    delete tablero[9];
     tablero[6] = new Calle("Glorieta Cuatro Caminos", Type::CALLE, std::vector<int>({6, 30, 90, 270, 400, 550}), 100, 50, 50, std::vector<int>({8, 9}));
+    tablero[7] = new Casilla("Suerte1", Type::SUERTE);
     tablero[8] = new Calle("Avenida Reina Victoria", Type::CALLE, std::vector<int>({6, 30, 90, 270, 400, 550}), 100, 50, 50, std::vector<int>({6, 9}));
     tablero[9] = new Calle("Calle Bravo Murillo", Type::CALLE, std::vector<int>({8, 40, 100, 300, 450, 600}), 120, 60, 50, std::vector<int>({6, 8}));
     //La casilla 10 es la carcel, asi que sera una casilla de ningun tipo
-    delete tablero[11];
-    delete tablero[13];
-    delete tablero[14];
+    tablero[10] = new Casilla();
     tablero[11] = new Calle("Glorieta De Bilbao", Type::CALLE, std::vector<int>({10, 50, 150, 450, 625, 750}), 140, 70, 100, std::vector<int>({13, 14}));
+    tablero[12] = new Casilla();
     tablero[13] = new Calle("Calle Alberto Aguilera", Type::CALLE, std::vector<int>({10, 50, 150, 450, 625, 750}), 140, 70, 100, std::vector<int>({11, 14}));
     tablero[14] = new Calle("Calle Fuencarral", Type::CALLE, std::vector<int>({12, 60, 180, 500, 700, 900}), 160, 80, 100, std::vector<int>({13, 11}));
-
-    delete tablero[15];
     tablero[15] = new Calle("Estacion De Las Delicias", Type::ESTACION, std::vector<int>({25, 50, 100, 200}), 200, 100, 0, std::vector<int>({5, 25, 35}));
-
-    delete tablero[16];
-    delete tablero[18];
-    delete tablero[19];
     tablero[16] = new Calle("Avenida Felipe II", Type::CALLE, std::vector<int>({14, 70, 200, 550, 750, 950}), 180, 90, 100, std::vector<int>({18, 19}));
+    tablero[17] = new Casilla("Caja de Comunidad2", Type::COMUNIDAD);
     tablero[18] = new Calle("Calle Velazquez", Type::CALLE, std::vector<int>({14, 70, 200, 550, 750, 950}), 180, 90, 100, std::vector<int>({16, 19}));
     tablero[19] = new Calle("Calle Serrano", Type::CALLE, std::vector<int>({16, 80, 220, 600, 800, 1000}), 200, 100, 100, std::vector<int>({16, 18}));
-
-    delete tablero[21];
-    delete tablero[23];
-    delete tablero[24];
+    tablero[20] = new Casilla();
     tablero[21] = new Calle("Avenida De America", Type::CALLE, std::vector<int>({18, 90, 250, 700, 875, 1050}), 220, 110, 150, std::vector<int>({23, 24}));
+    tablero[22] = new Casilla("Suerte2", Type::SUERTE);
     tablero[23] = new Calle("Calle Maria De Molina", Type::CALLE, std::vector<int>({18, 90, 250, 700, 875, 1050}), 220, 110, 150, std::vector<int>({21, 24}));
     tablero[24] = new Calle("Calle Cea Bermudez", Type::CALLE, std::vector<int>({20, 100, 300, 750, 925, 1100}), 240, 120, 150, std::vector<int>({21, 23}));
-
-    delete tablero[25];
     tablero[25] = new Calle("Estacion Del Mediodia", Type::ESTACION, std::vector<int>({25, 50, 100, 200}), 200, 100, 0, std::vector<int>({5, 15, 35}));
-
-    delete tablero[26];
-    delete tablero[28];
-    delete tablero[29];
     tablero[26] = new Calle("Avenida De Los Reyes Catolicos", Type::CALLE, std::vector<int>({22, 110, 330, 800, 975, 1150}), 260, 130, 150, std::vector<int>({28, 29}));
+    tablero[27] = new Casilla();
     tablero[28] = new Calle("Calle Bailen", Type::CALLE, std::vector<int>({22, 110, 330, 800, 975, 1150}), 260, 130, 150, std::vector<int>({26, 29}));
     tablero[29] = new Calle("Plaza De España", Type::CALLE, std::vector<int>({24, 120, 360, 850, 1025, 1200}), 280, 140, 150, std::vector<int>({26, 28}));
-    delete tablero[30];
-    tablero[30]=new Carcel("Ve a la carcel", Type::CARCEL, 50);
-    delete tablero[31];
-    delete tablero[32];
-    delete tablero[34];
+    tablero[30] = new Carcel("Ve a la carcel", Type::CARCEL, 50);
     tablero[31] = new Calle("Puerta Del Sol", Type::CALLE, std::vector<int>({26, 130, 390, 900, 1100, 1275}), 300, 150, 200, std::vector<int>({32, 34}));
     tablero[32] = new Calle("Calle Alcala", Type::CALLE, std::vector<int>({26, 130, 390, 900, 1100, 1275}), 300, 150, 200, std::vector<int>({31, 34}));
+    tablero[33] = new Casilla("Caja de Comunidad3",Type::COMUNIDAD);
     tablero[34] = new Calle("Gran Via", Type::CALLE, std::vector<int>({28, 150, 450, 1000, 1200, 1400}), 320, 160, 200, std::vector<int>({31, 32}));
-
-    delete tablero[35];
     tablero[35] = new Calle("Estacion Del Norte", Type::ESTACION, std::vector<int>({25, 50, 100, 200}), 200, 100, 0, std::vector<int>({5, 15, 25}));
-
-    delete tablero[37];
-    delete tablero[38];
-    delete tablero[39];
+    tablero[36] = new Casilla("Suerte3", Type::SUERTE);
     tablero[37] = new Calle("Paseo De La Castellana", Type::CALLE, std::vector<int>({35, 175, 500, 1100, 1300, 1500}), 350, 175, 200, std::vector<int>({39}));
     tablero[38] = new Impuesto("Impuesto de lujo", Type::IMPUESTO, 100);
     tablero[39] = new Calle("Paseo Del Prado", Type::CALLE, std::vector<int>({50, 200, 600, 1400, 1700, 2000}), 400, 200, 200, std::vector<int>({37}));
@@ -315,6 +283,86 @@ void Server::movementConsequences(int indexPlayer)
         socket.send(canFinish, *socketsPlayers[turnos[indexTurno]]);
         break;
     }
+    case SUERTE:
+    {
+        //Se saca un numero aleatorio entre 0 y 2 incluidos para saber el tipo de suerte
+        int rand = std::rand() % 3;
+        if(rand==0){
+            //Vector pagar
+            auto aux=suerte_pagar.front();
+            suerte_pagar.pop_front();      //Se saca el primero de la lista
+            suerte_pagar.push_back(aux);   //Se mete al final de la lista
+            PagarMsg p(aux.second);
+            p.setType(PAGAR);
+            socket.send(p, *socketsPlayers[turnos[indexTurno]]);
+            std::cout << "JUGADOR: " << players[indexPlayer].nick <<" "<<aux.first << "\n";
+        }
+        else if(rand==1){
+            //Vector cobrar
+            auto aux=suerte_cobrar.front();
+            suerte_cobrar.pop_front();     //Se saca el primero de la lista
+            suerte_cobrar.push_back(aux);  //Se mete al final de la lista
+            PagarMsg p(aux.second);
+            p.setType(COBRAR);
+            socket.send(p, *socketsPlayers[turnos[indexTurno]]);
+            std::cout << "JUGADOR: " << players[indexPlayer].nick <<" "<<aux.first << "\n";
+        }
+        else{
+            //Vector avanzar
+            auto aux=suerte_avanzar.front();
+            suerte_avanzar.pop_front();     //Se saca el primero de la lista
+            suerte_avanzar.push_back(aux);  //Se mete al final de la lista
+            //Muevo al jugador a la casilla
+            PlayerSerializable player(players[indexPlayer].nick,aux.second,players[indexPlayer].dinero,indexPlayer);
+            socket.send(player,*socketsPlayers[turnos[indexTurno]]);
+            std::cout << "JUGADOR: " << players[indexPlayer].nick <<" "<<aux.first << "\n";
+        }
+        canFinishTurn = true;
+        Message canFinish;
+        canFinish.setType(CANENDTURN);
+        socket.send(canFinish, *socketsPlayers[turnos[indexTurno]]);
+        break;
+    }
+    case COMUNIDAD:
+    {
+        //Se saca un numero aleatorio entre 0 y 2 incluidos para saber el tipo de suerte
+        int rand = std::rand() % 3;
+        if(rand==0){
+            //Vector pagar
+            auto aux=comunidad_pagar.front();
+            comunidad_pagar.pop_front();      //Se saca el primero de la lista
+            comunidad_pagar.push_back(aux);   //Se mete al final de la lista
+            PagarMsg p(aux.second);
+            p.setType(PAGAR);
+            socket.send(p, *socketsPlayers[turnos[indexTurno]]);
+            std::cout << "JUGADOR: " << players[indexPlayer].nick <<" "<<aux.first << "\n";
+        }
+        else if(rand==1){
+            //Vector cobrar
+            auto aux=comunidad_cobrar.front();
+            comunidad_cobrar.pop_front();     //Se saca el primero de la lista
+            comunidad_cobrar.push_back(aux);  //Se mete al final de la lista
+            PagarMsg p(aux.second);
+            p.setType(COBRAR);
+            socket.send(p, *socketsPlayers[turnos[indexTurno]]);
+            std::cout << "JUGADOR: " << players[indexPlayer].nick <<" "<<aux.first << "\n";
+        }
+        else{
+            //Vector avanzar
+            auto aux=comunidad_avanzar.front();
+            comunidad_avanzar.pop_front();     //Se saca el primero de la lista
+            comunidad_avanzar.push_back(aux);  //Se mete al final de la lista
+            //Muevo al jugador a la casilla
+            PlayerSerializable player(players[indexPlayer].nick,aux.second,players[indexPlayer].dinero,indexPlayer);
+            socket.send(player,*socketsPlayers[turnos[indexTurno]]);
+            std::cout << "JUGADOR: " << players[indexPlayer].nick <<" "<<aux.first << "\n";
+        }
+        canFinishTurn = true;
+        Message canFinish;
+        canFinish.setType(CANENDTURN);
+        socket.send(canFinish, *socketsPlayers[turnos[indexTurno]]);
+        break;
+    }
     default:
     { // QUITAR ESTO ES SOLO PARA LAS CASILLAS QUE NO TIENEN NADA
         canFinishTurn = true;
@@ -389,4 +437,44 @@ bool Server::tengoColor(int indexPosition){
         return true;
     }
     return false;
+}
+
+void Server::initCartasSuerte(){
+    //Pagar
+    suerte_pagar.push_back({"Multa por exceso de velocidad de 15", 15});
+    suerte_pagar.push_back({"Has sido víctima de un fraude bancario. Pierdes 200", 200});
+    suerte_pagar.push_back({"Tu propiedad ha sido afectada por un desastre natural. Realiza reparaciones urgentes y paga 150 por los costes", 150});
+    suerte_pagar.push_back({"Tus inversiones en bienes han tenido un rendimiento negativo. Pierdes 50 en el valor de tus propiedades", 50});
+    suerte_pagar.push_back({"Tu vehículo ha sufrido un fallo mecánico. Gasta 80 en reparaciones", 80});
+    //Cobrar
+    suerte_cobrar.push_back({"Rescate por el seguro de tus edificios cobra 150", 150});
+    suerte_cobrar.push_back({"La banca te paga un dividendo de 50", 50});
+    suerte_cobrar.push_back({"Recibiste un reembolso de impuestos. Cobra 200 de vuelta", 200});
+    suerte_cobrar.push_back({"Has encontrado un tesoro enterrado en tu propiedad. Cobra 75 como recompensa por tu descubrimiento", 75});
+    //Avanzar
+    suerte_avanzar.push_back({"Viaja hasta la Estacion de Goya", 5});
+    suerte_avanzar.push_back({"Ve a la carcel directamente", 30});
+    suerte_avanzar.push_back({"Avanza hasta la Glorieta de Bilbao", 11});
+    suerte_avanzar.push_back({"Avanza hasta el Paseo del Prado", 39});
+    suerte_avanzar.push_back({"Avanza hasta la calle Cea Bermudez", 24});
+    suerte_avanzar.push_back({"Colocate en la casilla de salida", 0});
+}
+void Server::initCartasComunidad(){
+    //Pagar
+    comunidad_pagar.push_back({"Paga las facturas del hospital de 100", 100});
+    comunidad_pagar.push_back({"Paga por los gastos escolares 50", 50});
+    comunidad_pagar.push_back({"Factura del medico. Paga 50", 50});
+    comunidad_pagar.push_back({"Debes realizar reparaciones en la calle. Paga 150", 150});
+    //Cobrar
+    comunidad_cobrar.push_back({"El fondo de vacaciones te reporta beneficios.Recibe 100", 100});
+    comunidad_cobrar.push_back({"Recibe 25 como honorarios de la asesoria", 25});
+    comunidad_cobrar.push_back({"Beneficios de tu seguro de vida. Cobar 100", 100});
+    comunidad_cobrar.push_back({"Heredas 100", 100});
+    comunidad_cobrar.push_back({"Has ganado el segundo premio en un concurso de belleza. Cobra 10", 10});
+    comunidad_cobrar.push_back({"Hacienda te devuelve. Cobra 20", 20});
+    comunidad_cobrar.push_back({"Error de la banca a tu favor. Recibe 200", 200});
+    comunidad_cobrar.push_back({"La venta de tus acciones te reporta 50", 50});
+    //Avanzar
+    comunidad_avanzar.push_back({"Ve a la carcel directamente", 30});
+    comunidad_avanzar.push_back({"Colocate en la casilla de salida", 0});
 }

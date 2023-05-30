@@ -34,8 +34,8 @@ void Player::input_thread(){
         }
         if(isMyTurn){
             if(msg=="t"&&!canFinishMyTurn){ //TIRAR DADOS                              
-                int dado1= /*std::rand() %6 + 1*/5;
-                int dado2= /*std::rand() %6 + 1*/0;
+                int dado1= std::rand() %6 + 1/*5*/;
+                int dado2= std::rand() %6 + 1/*0*/;
                 int suma=dado1+dado2+indexPosition;
                 suma%=40;
                 if(suma<indexPosition && suma!=0) //Si suma justo es la salida no entra porq se sumaria 2 veces
@@ -66,7 +66,7 @@ void Player::input_thread(){
                 money-=compra.buyPrice;
                 std::cout<<"Calle Comprada\n";                             
             }
-            if(msg=="s" && isInJail){
+            if(msg=="s" && isInJail && money>=moneyToPay){
                 isInJail=false;
                 money-=moneyToPay;
                 std::cout<<"Fianza Pagada\n";
