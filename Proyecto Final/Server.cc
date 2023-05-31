@@ -84,20 +84,41 @@ void Server::do_messages()
         case CASA:{          
             CasaMsg casa;
             casa.from_bin(tmpMessage.data());
-            
-            if (tengoColor(casa.indexPosition)){ //SI TENGO TODAS DEL MISMO COLOR
-                Calle* calle=dynamic_cast<Calle *>(tablero[casa.indexPosition]);
-                int after=calle->getRentIndex();
-                if(tryPonerCasas(casa.indexPosition,casa.numCasas)){
-                    after=after+casa.numCasas>5? (5-after):casa.numCasas;
-                    casa.msgResponse="Se han puesto " + std::to_string(after)+" casas en " 
-                    + calle->getName() + "\n";
+            if(casa.quitarCasas==0){
+                if (tengoColor(casa.indexPosition)){ //SI TENGO TODAS DEL MISMO COLOR
+                    Calle* calle=dynamic_cast<Calle *>(tablero[casa.indexPosition]);
+                    int after=calle->getRentIndex();
+                    if(tryPonerCasas(casa.indexPosition,casa.numCasas)){
+                        after=after+casa.numCasas>5? (5-after):casa.numCasas;
+                        casa.msgResponse="Se han puesto " + std::to_string(after)+" casas en " 
+                        + calle->getName() + "\n";
+                    }
+                    else  casa.msgResponse="No dispones de suficiente Dinero para poner ese numero de casas\n";             
                 }
-                else  casa.msgResponse="No dispones de suficiente Dinero para poner ese numero de casas\n";             
+                else{ 
+                    if(tablero[casa.indexPosition]->getType()==CALLE)casa.msgResponse="No dispones de toda la familia de calles\n";
+                    else casa.msgResponse="AHI NO SE PUEDE CONSTRUIR\n";
+                }
             }
-            else{ 
-                if(tablero[casa.indexPosition]->getType()==CALLE)casa.msgResponse="No dispones de toda la familia de calles\n";
-                else casa.msgResponse="AHI NO SE PUEDE CONSTRUIR\n";
+            else{
+                if (tengoColor(casa.indexPosition)){
+                   
+                    Calle* calle=dynamic_cast<Calle *>(tablero[casa.indexPosition]);
+                    int after=calle->getRentIndex(),quitar=after;
+                    after-=casa.numCasas;
+                    if(after<0){
+                        after=0;               
+                    }
+                    else quitar=casa.numCasas;
+                    int dinero= quitar*25;
+                    PagarMsg cobrar(dinero);
+                    cobrar.setType(COBRAR);
+                    socket.send(cobrar, *socketsPlayers[calle->getProperty()]);
+                    calle->setRentIndex(after);
+                    std::cout<<"rent actual de "<<calle->getName()<<" es "<<calle->getRentIndex()<<"\n";
+                    casa.msgResponse="Se han quitado "+std::to_string(quitar)+" casas\n";
+                }
+                else casa.msgResponse="No puedes quitar casas\n";
             }
             std::cout<<casa.msgResponse;
             socket.send(casa, *socketsPlayers[turnos[indexTurno]]);           

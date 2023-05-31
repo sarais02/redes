@@ -82,15 +82,15 @@ void Player::input_thread(){
             }
             if(msg[0]=='p'){
                 std::istringstream iss(msg);
-                std::string index,numCasas;
+                std::string index,numCasas,quitar;
                 std::getline(iss,index,' ');
                 std::getline(iss,index,' ');
                 std::getline(iss,numCasas,' ');
-                
+                std::getline(iss,quitar,' ');
                 if(std::isdigit(index[0])&&std::isdigit(numCasas[0])){ //SOLO CARACTERES NUMERICOS
                     
                     CasaMsg casa(std::stoi(index),std::stoi(numCasas));
-                    std::cout<<casa.indexPosition<<" "<<casa.numCasas<<"\n";
+                    if(quitar=="q")casa.quitarCasas=1;
                     socket.send(casa, socket);
                 }
             }

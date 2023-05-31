@@ -170,7 +170,7 @@ int PagarMsg::from_bin(char * bobj){
 }
 
 CasaMsg::CasaMsg(int16_t IndexPosition,int16_t NumCasas):indexPosition(IndexPosition),numCasas(NumCasas),msgResponse(""){
-    setType(CASA);
+    setType(CASA);quitarCasas=0;
 }
 void CasaMsg::to_bin(){
     alloc_data(MESSAGE_SIZE);
@@ -182,6 +182,8 @@ void CasaMsg::to_bin(){
     memcpy(tmp, &indexPosition, sizeof(int16_t));
     tmp += sizeof(uint16_t);
     memcpy(tmp, &numCasas, sizeof(int16_t));
+    tmp += sizeof(uint16_t);
+    memcpy(tmp, &quitarCasas, sizeof(int16_t));
     tmp += sizeof(uint16_t);
     memcpy(tmp, msgResponse.c_str(), sizeof(char) * 64);
 }
@@ -195,6 +197,8 @@ int CasaMsg::from_bin(char * bobj){
     memcpy(&indexPosition, buffer, sizeof(int16_t));
     buffer += sizeof(int16_t);
     memcpy(&numCasas, buffer, sizeof(int16_t));
+    buffer += sizeof(int16_t);
+    memcpy(&quitarCasas, buffer, sizeof(int16_t));
     buffer += sizeof(int16_t);
     char message_buffer[65] = {0};
     memcpy(message_buffer, buffer, 64 * sizeof(char)); 

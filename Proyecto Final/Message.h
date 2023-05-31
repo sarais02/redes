@@ -133,7 +133,7 @@ public:
 //Mandar un mensaje de para poner casas y la respuesta en msgResponse con la pregunta
 class CasaMsg: public Message{
 public:
-    static const size_t MESSAGE_SIZE = sizeof(uint8_t)+ sizeof(int16_t)*2+sizeof(char)*64;
+    static const size_t MESSAGE_SIZE = sizeof(uint8_t)+ sizeof(int16_t)*3+sizeof(char)*64;
     //CasaMsg POR DEFECTO TIENE EL TIPO DE MENSAJE CASA
     CasaMsg():Message(){type=CASA;};
     CasaMsg(int16_t IndexPosition,int16_t NumCasas);
@@ -144,6 +144,7 @@ public:
     int16_t indexPosition;
     int16_t numCasas;
     std::string msgResponse;
+    int16_t quitarCasas;
 };
 
 class CarcelMsg: public Message{
