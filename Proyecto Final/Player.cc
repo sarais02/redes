@@ -9,6 +9,7 @@ void Player::login(){
     IN_OUT em(nick, msg,true);   
 
     socket.send(em, socket);
+    loadWindow();
 }
 
 void Player::logout(){
@@ -20,10 +21,15 @@ void Player::logout(){
     socket.send(em, socket);
 }
 
+void Player::loadWindow(){
+    SDLUtils::init("Monopoly Online", 800, 600);
+}
+
 void Player::input_thread(){
     std::srand(std::time(0));
-    while (true)
+    while (!exit)
     {
+        
         // Leer stdin con std::getline
         // Enviar al servidor usando socket
         std::string msg;
@@ -122,7 +128,24 @@ void Player::input_thread(){
                 HipotecaMsg hipoteca(std::stoi(num),aux);
                 socket.send(hipoteca,socket);
             }
-        }       
+        } 
+        Uint32 startTime = sdlutils().currRealTime();
+        SDL_Event event;
+        while (SDL_PollEvent(&event)){
+            if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)){
+                exit=true;
+                std::cout<<"CERRAR VENTANA\n";
+                //sdlutils().closeWindow();
+                logout();
+                break;
+            }
+        }
+        sdlutils().clearRenderer({1, 1, 1});
+        sdlutils().presentRenderer();
+        Uint32 frameTime = sdlutils().currRealTime() - startTime;
+		if (frameTime < 20)
+			SDL_Delay(20 - frameTime);
+        std::cout<<"Otra vuelta\n";
     }
 }
 

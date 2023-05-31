@@ -12,6 +12,7 @@
 #include "Serializable.h"
 #include "Socket.h"
 #include "Message.h"
+#include "SDLUtils.h"
 
 /**
  *  Clase para el cliente de chat
@@ -51,6 +52,8 @@ public:
 
     void to_bin();
     int from_bin(char * bobj);
+
+    void loadWindow();
 
 private:
 
@@ -100,6 +103,7 @@ private:
     int cont=0;
     //
     bool isInJail=false;
+    bool exit=false;
     int moneyToPay;
     std::unordered_map<int,std::string> playerProperties;
 };
