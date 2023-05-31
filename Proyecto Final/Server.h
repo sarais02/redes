@@ -81,6 +81,8 @@ private:
     bool tengoColor(int indexPosition);
     void initCartasSuerte();
     void initCartasComunidad();
+
+    void hipotecar_deshipotecar(int indexPosition,int hipoteca);
     //CARTAS DE SUERTE
     std::list<std::pair<std::string, int>> suerte_pagar;
     std::list<std::pair<std::string, int>> suerte_cobrar;
@@ -89,5 +91,7 @@ private:
     std::list<std::pair<std::string, int>> comunidad_pagar;
     std::list<std::pair<std::string, int>> comunidad_cobrar;
     std::list<std::pair<std::string, int>> comunidad_avanzar;
+    //Posicion del jugador q le toca tirar antes de k tire los dados
+    int lastPosPlayer;
 };
 #endif

@@ -75,30 +75,46 @@ void Server::do_messages()
             std::cout << "ENDTURN\n";
             canFinishTurn = false;
             indexTurno = indexTurno + 1 % turnos.size();
+            lastPosPlayer = players[turnos[indexTurno]].indexPosition;
             Message initturno;
             initturno.setType(INITURN);
             socket.send(initturno, *socketsPlayers[turnos[indexTurno]]);
             break;
         }
-        case CASA:{
+        case CASA:{          
             CasaMsg casa;
             casa.from_bin(tmpMessage.data());
-            if (tengoColor(casa.indexPosition)){
-                if(tryPonerCasas(casa.indexPosition,casa.numCasas))
-                    std::cout << "Se han puesto " << casa.numCasas << " en " << casa.indexPosition << "\n";
-                else  ;             
+            
+            if (tengoColor(casa.indexPosition)){ //SI TENGO TODAS DEL MISMO COLOR
+                Calle* calle=dynamic_cast<Calle *>(tablero[casa.indexPosition]);
+                int after=calle->getRentIndex();
+                if(tryPonerCasas(casa.indexPosition,casa.numCasas)){
+                    after=after+casa.numCasas>5? (5-after):casa.numCasas;
+                    casa.msgResponse="Se han puesto " + std::to_string(after)+" casas en " 
+                    + calle->getName() + "\n";
+                }
+                else  casa.msgResponse="No dispones de suficiente Dinero para poner ese numero de casas\n";             
             }
-            else std::cout<<"NO SE HAN PODIDO PONER CASAS NO TIENE TODAS DEL MISMO COLOR\n";
+            else{ 
+                if(tablero[casa.indexPosition]->getType()==CALLE)casa.msgResponse="No dispones de toda la familia de calles\n";
+                else casa.msgResponse="AHI NO SE PUEDE CONSTRUIR\n";
+            }
+            std::cout<<casa.msgResponse;
+            socket.send(casa, *socketsPlayers[turnos[indexTurno]]);           
             break;
+        }
+        case HIPOTECA:{
+            std::cout<<"copy\n";
+            HipotecaMsg hipoteca;
+            hipoteca.from_bin(tmpMessage.data());
+            hipotecar_deshipotecar(hipoteca.indexPosition,hipoteca.hipoteca); //lanza el mensaje de respuesta con lo que pase
         }
         }
     }
 };
 
-void Server::input_thread()
-{
-    while (true)
-    {
+void Server::input_thread(){
+    while (true){
         std::string msg;
         std::getline(std::cin, msg);
         if (msg == "start" && !onGame)
@@ -114,56 +130,55 @@ void Server::input_thread()
         }
     }
 };
+
 void Server::initTablero()
 {
     tablero = std::vector<Casilla *>(40);
     
-    tablero[0] = new Salida("Salida", Type::SALIDA, 200);
-    tablero[1] = new Calle("Ronda De Valencia", Type::CALLE, std::vector<int>({2, 10, 30, 90, 160, 250}), 60, 30, 50, std::vector<int>({3}));
-    tablero[2] = new Casilla("Caja de comunidad1", Type::COMUNIDAD);
-    tablero[3] = new Calle("Plaza Lavapies", Type::CALLE, std::vector<int>({4, 20, 60, 180, 320, 450}), 60, 30, 50, std::vector<int>({1}));
-    tablero[4] = new Impuesto("Impuesto sobre el capital", Type::IMPUESTO, 200);
-    tablero[5] = new Calle("Estacion De Goya", Type::ESTACION, std::vector<int>({25, 50, 100, 200}), 200, 100, 0, std::vector<int>({15, 25, 35}));
-    tablero[6] = new Calle("Glorieta Cuatro Caminos", Type::CALLE, std::vector<int>({6, 30, 90, 270, 400, 550}), 100, 50, 50, std::vector<int>({8, 9}));
-    tablero[7] = new Casilla("Suerte1", Type::SUERTE);
-    tablero[8] = new Calle("Avenida Reina Victoria", Type::CALLE, std::vector<int>({6, 30, 90, 270, 400, 550}), 100, 50, 50, std::vector<int>({6, 9}));
-    tablero[9] = new Calle("Calle Bravo Murillo", Type::CALLE, std::vector<int>({8, 40, 100, 300, 450, 600}), 120, 60, 50, std::vector<int>({6, 8}));
+    tablero[0] = new Salida("Salida", TypeCalle::SALIDA, 200);
+    tablero[1] = new Calle("Ronda De Valencia", TypeCalle::CALLE, std::vector<int>({2, 10, 30, 90, 160, 250}), 60, 30, 50, std::vector<int>({3}));
+    tablero[2] = new Casilla("Caja de comunidad1", TypeCalle::COMUNIDAD);
+    tablero[3] = new Calle("Plaza Lavapies", TypeCalle::CALLE, std::vector<int>({4, 20, 60, 180, 320, 450}), 60, 30, 50, std::vector<int>({1}));
+    tablero[4] = new Impuesto("Impuesto sobre el capital", TypeCalle::IMPUESTO, 200);
+    tablero[5] = new Calle("Estacion De Goya", TypeCalle::ESTACION, std::vector<int>({25, 50, 100, 200}), 200, 100, 0, std::vector<int>({15, 25, 35}));
+    tablero[6] = new Calle("Glorieta Cuatro Caminos", TypeCalle::CALLE, std::vector<int>({6, 30, 90, 270, 400, 550}), 100, 50, 50, std::vector<int>({8, 9}));
+    tablero[7] = new Casilla("Suerte1", TypeCalle::SUERTE);
+    tablero[8] = new Calle("Avenida Reina Victoria", TypeCalle::CALLE, std::vector<int>({6, 30, 90, 270, 400, 550}), 100, 50, 50, std::vector<int>({6, 9}));
+    tablero[9] = new Calle("Calle Bravo Murillo", TypeCalle::CALLE, std::vector<int>({8, 40, 100, 300, 450, 600}), 120, 60, 50, std::vector<int>({6, 8}));
     //La casilla 10 es la carcel, asi que sera una casilla de ningun tipo
     tablero[10] = new Casilla();
-    tablero[11] = new Calle("Glorieta De Bilbao", Type::CALLE, std::vector<int>({10, 50, 150, 450, 625, 750}), 140, 70, 100, std::vector<int>({13, 14}));
-    tablero[12] = new Casilla();
-    tablero[13] = new Calle("Calle Alberto Aguilera", Type::CALLE, std::vector<int>({10, 50, 150, 450, 625, 750}), 140, 70, 100, std::vector<int>({11, 14}));
-    tablero[14] = new Calle("Calle Fuencarral", Type::CALLE, std::vector<int>({12, 60, 180, 500, 700, 900}), 160, 80, 100, std::vector<int>({13, 11}));
-    tablero[15] = new Calle("Estacion De Las Delicias", Type::ESTACION, std::vector<int>({25, 50, 100, 200}), 200, 100, 0, std::vector<int>({5, 25, 35}));
-    tablero[16] = new Calle("Avenida Felipe II", Type::CALLE, std::vector<int>({14, 70, 200, 550, 750, 950}), 180, 90, 100, std::vector<int>({18, 19}));
-    tablero[17] = new Casilla("Caja de Comunidad2", Type::COMUNIDAD);
-    tablero[18] = new Calle("Calle Velazquez", Type::CALLE, std::vector<int>({14, 70, 200, 550, 750, 950}), 180, 90, 100, std::vector<int>({16, 19}));
-    tablero[19] = new Calle("Calle Serrano", Type::CALLE, std::vector<int>({16, 80, 220, 600, 800, 1000}), 200, 100, 100, std::vector<int>({16, 18}));
+    tablero[11] = new Calle("Glorieta De Bilbao", TypeCalle::CALLE, std::vector<int>({10, 50, 150, 450, 625, 750}), 140, 70, 100, std::vector<int>({13, 14}));
+    tablero[12] = new Calle("Servicio de Electricidad",TypeCalle::SERVICIOS,std::vector<int>({4,10}),150,75,0,std::vector<int>({27}));
+    tablero[13] = new Calle("Calle Alberto Aguilera", TypeCalle::CALLE, std::vector<int>({10, 50, 150, 450, 625, 750}), 140, 70, 100, std::vector<int>({11, 14}));
+    tablero[14] = new Calle("Calle Fuencarral", TypeCalle::CALLE, std::vector<int>({12, 60, 180, 500, 700, 900}), 160, 80, 100, std::vector<int>({13, 11}));
+    tablero[15] = new Calle("Estacion De Las Delicias", TypeCalle::ESTACION, std::vector<int>({25, 50, 100, 200}), 200, 100, 0, std::vector<int>({5, 25, 35}));
+    tablero[16] = new Calle("Avenida Felipe II", TypeCalle::CALLE, std::vector<int>({14, 70, 200, 550, 750, 950}), 180, 90, 100, std::vector<int>({18, 19}));
+    tablero[17] = new Casilla("Caja de Comunidad2", TypeCalle::COMUNIDAD);
+    tablero[18] = new Calle("Calle Velazquez", TypeCalle::CALLE, std::vector<int>({14, 70, 200, 550, 750, 950}), 180, 90, 100, std::vector<int>({16, 19}));
+    tablero[19] = new Calle("Calle Serrano", TypeCalle::CALLE, std::vector<int>({16, 80, 220, 600, 800, 1000}), 200, 100, 100, std::vector<int>({16, 18}));
     tablero[20] = new Casilla();
-    tablero[21] = new Calle("Avenida De America", Type::CALLE, std::vector<int>({18, 90, 250, 700, 875, 1050}), 220, 110, 150, std::vector<int>({23, 24}));
-    tablero[22] = new Casilla("Suerte2", Type::SUERTE);
-    tablero[23] = new Calle("Calle Maria De Molina", Type::CALLE, std::vector<int>({18, 90, 250, 700, 875, 1050}), 220, 110, 150, std::vector<int>({21, 24}));
-    tablero[24] = new Calle("Calle Cea Bermudez", Type::CALLE, std::vector<int>({20, 100, 300, 750, 925, 1100}), 240, 120, 150, std::vector<int>({21, 23}));
-    tablero[25] = new Calle("Estacion Del Mediodia", Type::ESTACION, std::vector<int>({25, 50, 100, 200}), 200, 100, 0, std::vector<int>({5, 15, 35}));
-    tablero[26] = new Calle("Avenida De Los Reyes Catolicos", Type::CALLE, std::vector<int>({22, 110, 330, 800, 975, 1150}), 260, 130, 150, std::vector<int>({28, 29}));
-    tablero[27] = new Casilla();
-    tablero[28] = new Calle("Calle Bailen", Type::CALLE, std::vector<int>({22, 110, 330, 800, 975, 1150}), 260, 130, 150, std::vector<int>({26, 29}));
-    tablero[29] = new Calle("Plaza De España", Type::CALLE, std::vector<int>({24, 120, 360, 850, 1025, 1200}), 280, 140, 150, std::vector<int>({26, 28}));
-    tablero[30] = new Carcel("Ve a la carcel", Type::CARCEL, 50);
-    tablero[31] = new Calle("Puerta Del Sol", Type::CALLE, std::vector<int>({26, 130, 390, 900, 1100, 1275}), 300, 150, 200, std::vector<int>({32, 34}));
-    tablero[32] = new Calle("Calle Alcala", Type::CALLE, std::vector<int>({26, 130, 390, 900, 1100, 1275}), 300, 150, 200, std::vector<int>({31, 34}));
-    tablero[33] = new Casilla("Caja de Comunidad3",Type::COMUNIDAD);
-    tablero[34] = new Calle("Gran Via", Type::CALLE, std::vector<int>({28, 150, 450, 1000, 1200, 1400}), 320, 160, 200, std::vector<int>({31, 32}));
-    tablero[35] = new Calle("Estacion Del Norte", Type::ESTACION, std::vector<int>({25, 50, 100, 200}), 200, 100, 0, std::vector<int>({5, 15, 25}));
-    tablero[36] = new Casilla("Suerte3", Type::SUERTE);
-    tablero[37] = new Calle("Paseo De La Castellana", Type::CALLE, std::vector<int>({35, 175, 500, 1100, 1300, 1500}), 350, 175, 200, std::vector<int>({39}));
-    tablero[38] = new Impuesto("Impuesto de lujo", Type::IMPUESTO, 100);
-    tablero[39] = new Calle("Paseo Del Prado", Type::CALLE, std::vector<int>({50, 200, 600, 1400, 1700, 2000}), 400, 200, 200, std::vector<int>({37}));
+    tablero[21] = new Calle("Avenida De America", TypeCalle::CALLE, std::vector<int>({18, 90, 250, 700, 875, 1050}), 220, 110, 150, std::vector<int>({23, 24}));
+    tablero[22] = new Casilla("Suerte2", TypeCalle::SUERTE);
+    tablero[23] = new Calle("Calle Maria De Molina", TypeCalle::CALLE, std::vector<int>({18, 90, 250, 700, 875, 1050}), 220, 110, 150, std::vector<int>({21, 24}));
+    tablero[24] = new Calle("Calle Cea Bermudez", TypeCalle::CALLE, std::vector<int>({20, 100, 300, 750, 925, 1100}), 240, 120, 150, std::vector<int>({21, 23}));
+    tablero[25] = new Calle("Estacion Del Mediodia", TypeCalle::ESTACION, std::vector<int>({25, 50, 100, 200}), 200, 100, 0, std::vector<int>({5, 15, 35}));
+    tablero[26] = new Calle("Avenida De Los Reyes Catolicos", TypeCalle::CALLE, std::vector<int>({22, 110, 330, 800, 975, 1150}), 260, 130, 150, std::vector<int>({28, 29}));
+    tablero[27] = new Calle("Servicio de Aguas",TypeCalle::SERVICIOS,std::vector<int>({4,10}),150,75,0,std::vector<int>({12}));
+    tablero[28] = new Calle("Calle Bailen", TypeCalle::CALLE, std::vector<int>({22, 110, 330, 800, 975, 1150}), 260, 130, 150, std::vector<int>({26, 29}));
+    tablero[29] = new Calle("Plaza De España", TypeCalle::CALLE, std::vector<int>({24, 120, 360, 850, 1025, 1200}), 280, 140, 150, std::vector<int>({26, 28}));
+    tablero[30] = new Carcel("Ve a la carcel", TypeCalle::CARCEL, 50);
+    tablero[31] = new Calle("Puerta Del Sol", TypeCalle::CALLE, std::vector<int>({26, 130, 390, 900, 1100, 1275}), 300, 150, 200, std::vector<int>({32, 34}));
+    tablero[32] = new Calle("Calle Alcala", TypeCalle::CALLE, std::vector<int>({26, 130, 390, 900, 1100, 1275}), 300, 150, 200, std::vector<int>({31, 34}));
+    tablero[33] = new Casilla("Caja de Comunidad3",TypeCalle::COMUNIDAD);
+    tablero[34] = new Calle("Gran Via", TypeCalle::CALLE, std::vector<int>({28, 150, 450, 1000, 1200, 1400}), 320, 160, 200, std::vector<int>({31, 32}));
+    tablero[35] = new Calle("Estacion Del Norte", TypeCalle::ESTACION, std::vector<int>({25, 50, 100, 200}), 200, 100, 0, std::vector<int>({5, 15, 25}));
+    tablero[36] = new Casilla("Suerte3", TypeCalle::SUERTE);
+    tablero[37] = new Calle("Paseo De La Castellana", TypeCalle::CALLE, std::vector<int>({35, 175, 500, 1100, 1300, 1500}), 350, 175, 200, std::vector<int>({39}));
+    tablero[38] = new Impuesto("Impuesto de lujo", TypeCalle::IMPUESTO, 100);
+    tablero[39] = new Calle("Paseo Del Prado", TypeCalle::CALLE, std::vector<int>({50, 200, 600, 1400, 1700, 2000}), 400, 200, 200, std::vector<int>({37}));
 };
 
-void Server::initPlayers()
-{
-
+void Server::initPlayers(){
     int max = socketsPlayers.size();
     turnos = std::vector<int>(max, -1);
     for (int i = 0; i < max; i++)
@@ -186,15 +201,16 @@ void Server::initPlayers()
     Message initturno;
     initturno.setType(INITURN);
     socket.send(initturno, *socketsPlayers[turnos[indexTurno]]);
+    lastPosPlayer=0;
     std::cout << "ENVIADO TURNO A: " << turnos[indexTurno] << "\n";
 };
 
-void Server::movementConsequences(int indexPlayer)
-{
+void Server::movementConsequences(int indexPlayer){
     int posPlayer = players[indexPlayer].indexPosition;
 
     switch (tablero[posPlayer]->getType())
     {
+    case SERVICIOS:
     case ESTACION:
     case CALLE:
     {
@@ -215,7 +231,11 @@ void Server::movementConsequences(int indexPlayer)
         }
         else if (calle->getProperty() != indexPlayer)// La tiene alguien
         { 
-            int dinero=calle->rentCost(); //Dinero que se cobra
+            int dinero;
+            if(calle->getType()==SERVICIOS){ //SOLO PARA AGUA Y ELETRICIDAD
+                dinero=calle->rentCost()*players[indexPlayer].indexPosition-lastPosPlayer;
+            }
+            else dinero=calle->rentCost(); //Dinero que se cobra
             //Mensaje para cobrar al que ha caido
             PagarMsg pagar(dinero); 
             pagar.setType(PAGAR);
@@ -364,7 +384,7 @@ void Server::movementConsequences(int indexPlayer)
         break;
     }
     default:
-    { // QUITAR ESTO ES SOLO PARA LAS CASILLAS QUE NO TIENEN NADA
+    { // SOLO PARA LAS CASILLAS QUE NO TIENEN NADA
         canFinishTurn = true;
         Message canFinish;
         canFinish.setType(CANENDTURN);
@@ -373,21 +393,17 @@ void Server::movementConsequences(int indexPlayer)
     }
 };
 
-void Server::comprarCasilla()
-{
+void Server::comprarCasilla(){
     int indexplayer = turnos[indexTurno];
     switch (tablero[players[indexplayer].indexPosition]->getType())
     {
-    case SERVICIOS:
-    case CALLE:
-    {
+    case CALLE:{
         Calle *calle = dynamic_cast<Calle *>(tablero[players[indexplayer].indexPosition]);
         calle->setProperty(indexplayer);
         std::cout << "Casilla " << calle->getName() << " comprada por " << players[indexplayer].nick << "\n";
         break;
     }
-    case ESTACION:
-    {
+    case ESTACION:{
         Calle *calle = dynamic_cast<Calle *>(tablero[players[indexplayer].indexPosition]);
         calle->setProperty(indexplayer);
         std::cout << calle->getName() << " comprada por " << players[indexplayer].nick << "\n";
@@ -409,28 +425,44 @@ void Server::comprarCasilla()
         }
         break;
     }
+    case SERVICIOS:{
+        Calle *calle = dynamic_cast<Calle *>(tablero[players[indexplayer].indexPosition]);
+        calle->setProperty(indexplayer);
+        std::cout << calle->getName() << " comprada por " << players[indexplayer].nick << "\n";
+        Calle* laotra=dynamic_cast<Calle *>(tablero[calle->getFamily()[0]]);                        
+        
+        if(laotra->getProperty()==indexplayer){
+            std::cout<<"todas compradas\n";
+            calle->setRentIndex(2);
+            laotra->setRentIndex(2);
+        }
+    }
     }
 }
 
 bool Server::tryPonerCasas(int indexPosition, int numCasas){
     // todas las casillas las tiene el jugador
-    Calle *calle = dynamic_cast<Calle *>(tablero[indexPosition]); 
+    Calle *calle = dynamic_cast<Calle *>(tablero[indexPosition]);
+    if(numCasas>5)numCasas=5; 
     if(calle->getHousePrice()*numCasas<=players[turnos[indexTurno]].dinero){ 
         players[turnos[indexTurno]].dinero-=calle->getHousePrice()*numCasas;
         calle->setRentIndex(numCasas);
+        PagarMsg pagar(calle->getHousePrice()*numCasas); 
+        pagar.setType(PAGAR);
+        socket.send(pagar, *socketsPlayers[turnos[indexTurno]]);
         return true; 
     }
     return false;
 };
+
 bool Server::tengoColor(int indexPosition){
     Casilla *tmpCasilla = tablero[indexPosition];
     if (tmpCasilla->getType() == CALLE)
     {
         Calle *calle = dynamic_cast<Calle *>(tablero[indexPosition]);
-        for (auto it : calle->getFamily())
-        {
-            if (dynamic_cast<Calle *>(tablero[indexPosition])->getProperty() != turnos[indexTurno])
-            {
+        if(calle->getProperty()!=turnos[indexTurno])return false;
+        for (auto it : calle->getFamily()){
+            if (dynamic_cast<Calle *>(tablero[it])->getProperty() != turnos[indexTurno]){
                 return false;
             }
         }
@@ -459,6 +491,7 @@ void Server::initCartasSuerte(){
     suerte_avanzar.push_back({"Avanza hasta la calle Cea Bermudez", 24});
     suerte_avanzar.push_back({"Colocate en la casilla de salida", 0});
 }
+
 void Server::initCartasComunidad(){
     //Pagar
     comunidad_pagar.push_back({"Paga las facturas del hospital de 100", 100});
@@ -477,4 +510,49 @@ void Server::initCartasComunidad(){
     //Avanzar
     comunidad_avanzar.push_back({"Ve a la carcel directamente", 30});
     comunidad_avanzar.push_back({"Colocate en la casilla de salida", 0});
+}
+
+void Server::hipotecar_deshipotecar(int indexPosition,int hipoteca){  
+    HipotecaMsg hipotecaMsg= HipotecaMsg(indexPosition,hipoteca);hipotecaMsg.setType(HIPOTECA);
+    switch(tablero[indexPosition]->getType()){
+        case ESTACION:
+        case SERVICIOS:
+        case HIPOTECADA:
+        case CALLE:{
+            Calle* calle =dynamic_cast<Calle *>(tablero[indexPosition]);
+            if(calle->getProperty()!=turnos[indexTurno]){
+                hipotecaMsg.msgResponse="NO ES DE TU PROPIEDAD\n";
+                break;
+            }
+            if(hipoteca==1){
+                if(calle->getType()!=HIPOTECADA){
+                    hipotecaMsg.msgResponse= calle->getName()+" Hipotecada Con Exito\n";
+                    players[turnos[indexTurno]].dinero+=calle->getMortgage();
+                    PagarMsg cobrar(calle->getMortgage());
+                    cobrar.setType(COBRAR);
+                    socket.send(cobrar, *socketsPlayers[calle->getProperty()]);
+                    calle->setType(HIPOTECADA);
+                }
+                else hipotecaMsg.msgResponse= calle->getName()+" Ya esta Hipotecada\n";
+            }
+            else{
+                if(calle->getType()==HIPOTECADA){
+                   
+                    if( players[turnos[indexTurno]].dinero>=calle->getMortgage()){
+                        hipotecaMsg.msgResponse= calle->getName()+" deshipotecada con Exito\n";
+                        players[turnos[indexTurno]].dinero-=calle->getMortgage();
+                        PagarMsg cobrar(calle->getMortgage());
+                        cobrar.setType(PAGAR);
+                        socket.send(cobrar, *socketsPlayers[calle->getProperty()]);
+                        calle->setType(CALLE);                       
+                    }
+                    else hipotecaMsg.msgResponse=" No puedes Deshipotecar "+ calle->getName()+" porque no tienes suficiente dinero\n";
+                }
+                else hipotecaMsg.msgResponse = calle->getName()+" No esta Hipotecada\n";
+            }            
+            break;
+        }
+    }
+    std::cout<<hipotecaMsg.msgResponse;
+    socket.send(hipotecaMsg, *socketsPlayers[turnos[indexTurno]]);
 }

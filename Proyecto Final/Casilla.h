@@ -4,7 +4,7 @@
 #include <vector>
 
 //Enum para ver el tipo de casilla
-enum Type: u_int8_t{NOTHING=0,CALLE=1,CARCEL=2,SUERTE=3,COMUNIDAD=4,IMPUESTO=5,SALIDA=6,ESTACION=7,SERVICIOS=8};
+enum TypeCalle: u_int8_t{NOTHING=0,CALLE=1,CARCEL=2,SUERTE=3,COMUNIDAD=4,IMPUESTO=5,SALIDA=6,ESTACION=7,SERVICIOS=8,HIPOTECADA};
 
 class Casilla{
 protected:
@@ -18,7 +18,8 @@ public:
     Casilla(std::string namee, u_int8_t type);
     ~Casilla(){};
     
-    inline u_int8_t getType(){return myType;};   
+    inline u_int8_t getType(){return myType;};
+    inline void setType(u_int8_t type){myType=type;};   
     inline std::string getName(){return name;};
     //Cuando llegue un jugador a esa casilla que tiene que pasar
     virtual void getSomething(){};
@@ -48,8 +49,10 @@ public:
     inline int getPrice(){return buyPrice;};
     inline int getProperty(){return property;};
     inline int getHousePrice(){return housePrice;};
+    inline int getMortgage(){return mortgage;};
     inline void setProperty(int index){property=index;};    
     inline int rentCost(){return rentPrices[indexRentPrices];};
+    inline int getRentIndex(){return indexRentPrices;};
     inline std::vector<int> getFamily(){return familyColors;};
     void getSomething() override;
     void setRentIndex(int num);

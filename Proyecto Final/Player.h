@@ -69,7 +69,7 @@ private:
     /**
      * Booleano que representa si el jugador puede comprar una casilla
      */
-    bool canBuySomething;
+    bool canBuySomething = false;
     /**
      * Lo que me puedo Comprar
      */

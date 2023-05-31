@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <ctime>
 #include "Message.h"
-
+#include <sstream>
 void Player::login(){
     std::string msg;
 
@@ -34,8 +34,8 @@ void Player::input_thread(){
         }
         if(isMyTurn){
             if(msg=="t"&&!canFinishMyTurn){ //TIRAR DADOS                              
-                int dado1= std::rand() %6 + 1/*5*/;
-                int dado2= std::rand() %6 + 1/*0*/;
+                int dado1= std::rand() %6 + 1;
+                int dado2= std::rand() %6 + 1;
                 int suma=dado1+dado2+indexPosition;
                 suma%=40;
                 if(suma<indexPosition && suma!=0) //Si suma justo es la salida no entra porq se sumaria 2 veces
@@ -44,7 +44,7 @@ void Player::input_thread(){
                     socket.send(player,socket);
                 }
                 indexPosition=suma;
-                //indexPosition%=39;               
+                              
                 std::cout<<"Tiro: "<<dado1<<" "<<dado2<<"\n";
                 std::cout<<"IndexPosition: "<<indexPosition<<"\n";              
                 PlayerSerializable player(nick,indexPosition,money,indexPlayer);//POR DEFECTO ES MOVER EL TIPO DE MENSAJE PLAYERSERIALIZABLE
@@ -80,8 +80,49 @@ void Player::input_thread(){
                 isMyTurn=false;
                 canBuySomething=false;
             }
-        }
-        
+            if(msg[0]=='p'){
+                std::istringstream iss(msg);
+                std::string index,numCasas;
+                std::getline(iss,index,' ');
+                std::getline(iss,index,' ');
+                std::getline(iss,numCasas,' ');
+                
+                if(std::isdigit(index[0])&&std::isdigit(numCasas[0])){ //SOLO CARACTERES NUMERICOS
+                    
+                    CasaMsg casa(std::stoi(index),std::stoi(numCasas));
+                    std::cout<<casa.indexPosition<<" "<<casa.numCasas<<"\n";
+                    socket.send(casa, socket);
+                }
+            }
+            if(msg[0]=='m'){ //QUITAR
+                std::istringstream iss(msg);
+                std::string num;
+                std::getline(iss,num,' ');
+                std::getline(iss,num,' ');
+                int suma=std::stoi(num);
+                suma%=40;
+                if(suma<indexPosition && suma!=0) //Si suma justo es la salida no entra porq se sumaria 2 veces
+                {
+                    PlayerSerializable player(nick,0,money,indexPlayer);//Muevo al jugador a la salida
+                    socket.send(player,socket);
+                }
+                indexPosition=suma;
+
+                std::cout<<"IndexPosition: "<<indexPosition<<"\n";              
+                PlayerSerializable player(nick,indexPosition,money,indexPlayer);//POR DEFECTO ES MOVER EL TIPO DE MENSAJE PLAYERSERIALIZABLE
+                socket.send(player,socket);
+            }
+            if(msg[0]=='h'){
+                std::istringstream iss(msg);
+                std::string num,hipotecar;
+                std::getline(iss,num,' ');
+                std::getline(iss,num,' ');
+                std::getline(iss,hipotecar,' ');               
+                int aux=hipotecar=="hipotecar"?1:0;              
+                HipotecaMsg hipoteca(std::stoi(num),aux);
+                socket.send(hipoteca,socket);
+            }
+        }       
     }
 }
 
@@ -166,6 +207,19 @@ void Player::net_thread(){
                 moneyToPay=carcel.buyPrice;
                 std::cout<<"Quieres pagar "<<moneyToPay<<
                 " para salir de la carcel? PRESS S TO ACCEPT OR N TO REJECT \n";
+                break;
+            }
+            case CASA:{
+                CasaMsg casa;
+                casa.from_bin(tmpMessage.data());
+                std::cout<<"SOLICITUD DE CASA: "<<casa.msgResponse;
+                break;
+            }
+            case HIPOTECA:{
+                HipotecaMsg hipoteca;
+                hipoteca.from_bin(tmpMessage.data());
+                std::cout<<"SOLICITUD DE HIPOTECAR: "<<hipoteca.msgResponse<<"\n";
+                break;
             }
         }        
     }

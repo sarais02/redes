@@ -22,7 +22,8 @@ enum TypesMessages : u_int8_t {
     CANENDTURN=10,
     COBRAR=11,
     CASA=12,
-    IRACARCEL=13
+    IRACARCEL=13,
+    HIPOTECA=14
 };
 class Message:public Serializable{
 public:
@@ -67,7 +68,7 @@ public:
 
 /**
  *  Mensaje del protocolo de la aplicación 
- *  EL TIPO DE MENSAJE
+ *  | EL TIPO DE MENSAJE|
  *  +-------------------+
  *  | Nick: char[8]     | Nick incluido el char terminación de cadena '\0'
  *  +-------------------+
@@ -129,10 +130,11 @@ public:
     int16_t buyPrice;
 };
 
+//Mandar un mensaje de para poner casas y la respuesta en msgResponse con la pregunta
 class CasaMsg: public Message{
 public:
-    static const size_t MESSAGE_SIZE = sizeof(uint8_t)+ sizeof(int16_t)*2;
-    //PLAYER SERIALIZABLE POR DEFECTO TIENE EL TIPO DE MENSAJE MOVER
+    static const size_t MESSAGE_SIZE = sizeof(uint8_t)+ sizeof(int16_t)*2+sizeof(char)*64;
+    //CasaMsg POR DEFECTO TIENE EL TIPO DE MENSAJE CASA
     CasaMsg():Message(){type=CASA;};
     CasaMsg(int16_t IndexPosition,int16_t NumCasas);
 
@@ -143,10 +145,11 @@ public:
     int16_t numCasas;
     std::string msgResponse;
 };
+
 class CarcelMsg: public Message{
 public:
     static const size_t MESSAGE_SIZE = sizeof(uint8_t)+ sizeof(int16_t);
-    //PLAYER SERIALIZABLE POR DEFECTO TIENE EL TIPO DE MENSAJE MOVER
+    //CarcelMsg POR DEFECTO TIENE EL TIPO DE MENSAJE IRACARCEL
     CarcelMsg():Message(){type=IRACARCEL;};
     CarcelMsg(int16_t BuyPrice);
 
@@ -155,4 +158,20 @@ public:
    
     int16_t buyPrice;
 };
+
+class HipotecaMsg: public Message{
+public:
+    static const size_t MESSAGE_SIZE = sizeof(uint8_t)+ sizeof(int16_t)*2+sizeof(char)*48;
+    //CarcelMsg POR DEFECTO TIENE EL TIPO DE MENSAJE IRACARCEL
+    HipotecaMsg():Message(){type=HIPOTECA;};
+    HipotecaMsg(int16_t IndexPosition,bool Hipoteca);
+
+    void to_bin() override;
+    int from_bin(char * bobj) override;
+   
+    int16_t indexPosition;
+    int16_t hipoteca;
+    std::string msgResponse;
+};
+
 #endif
