@@ -8,7 +8,7 @@ int main(int argc, char **argv)
     ec.login();
 
     std::thread net_thread([&ec](){ ec.net_thread(); });
-
+    std::thread net_thread2([&ec](){ ec.bucleVentana(); });
     ec.input_thread();
     return 0;
 }

@@ -19,12 +19,12 @@
         m_y = t_y;
     }
 
-    double Vector2::getX()
+    double Vector2::getX() const
     {
         return m_x;
     }
 
-    double Vector2::getY()
+    double Vector2::getY() const
     {
         return m_y;
     }

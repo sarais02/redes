@@ -13,7 +13,7 @@
 #include "Socket.h"
 #include "Message.h"
 #include "SDLUtils.h"
-
+#include "SDLTexture.h"
 /**
  *  Clase para el cliente de chat
  */
@@ -54,7 +54,10 @@ public:
     int from_bin(char * bobj);
 
     void loadWindow();
-
+    //SDL
+    void bucleVentana();
+    void gestionEventos();
+    void moverPlayer();
 private:
 
     /**
@@ -106,5 +109,8 @@ private:
     bool exit=false;
     int moneyToPay;
     std::unordered_map<int,std::string> playerProperties;
+
+    SDLTexture texturaMapa;
+    SDLTexture texturaJugador;
 };
 #endif

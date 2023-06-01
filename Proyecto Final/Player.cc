@@ -3,6 +3,7 @@
 #include <ctime>
 #include "Message.h"
 #include <sstream>
+#include <thread>
 void Player::login(){
     std::string msg;
 
@@ -23,13 +24,16 @@ void Player::logout(){
 
 void Player::loadWindow(){
     SDLUtils::init("Monopoly Online", 800, 600);
+
+    texturaMapa=SDLTexture(SDLUtils::instance()->renderer(), "Images/Tablero_1.jpg",{20,0,760,560});      
+    texturaJugador=SDLTexture(SDLUtils::instance()->renderer(), "Images/Suerte_1.jpg",{20,20,20,20});  
+    texturaJugador.setPosition({693.5,520});
+    
 }
 
 void Player::input_thread(){
     std::srand(std::time(0));
-    while (!exit)
-    {
-        
+    while (!exit){       
         // Leer stdin con std::getline
         // Enviar al servidor usando socket
         std::string msg;
@@ -55,6 +59,7 @@ void Player::input_thread(){
                 std::cout<<"IndexPosition: "<<indexPosition<<"\n";              
                 PlayerSerializable player(nick,indexPosition,money,indexPlayer);//POR DEFECTO ES MOVER EL TIPO DE MENSAJE PLAYERSERIALIZABLE
                 socket.send(player,socket);
+                moverPlayer();
             }
             if(msg=="e"&&canFinishMyTurn){ //SI PUEDO ACABAR TURNO
                 std::cout<<"Acabo Mi Turno\n";
@@ -70,6 +75,7 @@ void Player::input_thread(){
                 canBuySomething=false;
                 socket.send(compra,socket);                
                 money-=compra.buyPrice;
+                playerProperties.insert({compra.indexCasilla,compra.nombre});
                 std::cout<<"Calle Comprada\n";                             
             }
             if(msg=="s" && isInJail && money>=moneyToPay){
@@ -128,25 +134,9 @@ void Player::input_thread(){
                 HipotecaMsg hipoteca(std::stoi(num),aux);
                 socket.send(hipoteca,socket);
             }
-        } 
-        Uint32 startTime = sdlutils().currRealTime();
-        SDL_Event event;
-        while (SDL_PollEvent(&event)){
-            if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)){
-                exit=true;
-                std::cout<<"CERRAR VENTANA\n";
-                //sdlutils().closeWindow();
-                logout();
-                break;
-            }
-        }
-        sdlutils().clearRenderer({1, 1, 1});
-        sdlutils().presentRenderer();
-        Uint32 frameTime = sdlutils().currRealTime() - startTime;
-		if (frameTime < 20)
-			SDL_Delay(20 - frameTime);
-        std::cout<<"Otra vuelta\n";
+        }        
     }
+    std::cout<<"termina\n";
 }
 
 void Player::net_thread(){
@@ -166,7 +156,7 @@ void Player::net_thread(){
                     money=playerMSG.dinero;
                     std::cout<<"INIT RECIDIBIDO "<<indexPlayer<<"\n";                   
                 }
-                break;
+                break; 
             }
             case INITURN:{
                 std::cout<<"MI TURNO\n";
@@ -245,5 +235,117 @@ void Player::net_thread(){
                 break;
             }
         }        
+    }
+}
+void Player::bucleVentana(){
+    std::cout<<"Hola hilo\n";
+    while(!exit){
+        Uint32 startTime = sdlutils().currRealTime();
+        gestionEventos();
+        //RENDERIZAR IMAGENES       
+        sdlutils().clearRenderer({0, 0, 0});      
+
+        texturaMapa.render();
+        texturaJugador.render();
+
+        sdlutils().presentRenderer();//TE PRESENTA LOS CAMBIOS EN LA VENTANA
+        Uint32 frameTime = sdlutils().currRealTime() - startTime;
+		if (frameTime < 20)
+			SDL_Delay(20 - frameTime);
+    }
+}
+void Player::gestionEventos(){
+    SDL_Event event;
+    while (SDL_PollEvent(&event)){
+        if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)){
+            exit=true;
+            std::cout<<"CERRAR VENTANA\n";
+            sdlutils().closeWindow();
+            logout();              
+        }
+        if(event.type == SDL_KEYDOWN){
+            switch (event.key.keysym.scancode){
+                case SDL_SCANCODE_SPACE:{ //TIRAR LOS DADOS
+                    if(!canFinishMyTurn){ //TIRAR DADOS                              
+                        int dado1= 0;//std::rand() %6 + 1;
+                        int dado2= 3;//std::rand() %6 + 1;
+                        int suma=dado1+dado2+indexPosition;
+                        suma%=40;
+                        if(suma<indexPosition && suma!=0) //Si suma justo es la salida no entra porq se sumaria 2 veces
+                        {
+                            PlayerSerializable player(nick,0,money,indexPlayer);//Muevo al jugador a la salida
+                            socket.send(player,socket);
+                        }
+                        indexPosition=suma;
+                            
+                        std::cout<<"Tiro: "<<dado1<<" "<<dado2<<"\n";
+                        std::cout<<"IndexPosition: "<<indexPosition<<"\n";              
+                        PlayerSerializable player(nick,indexPosition,money,indexPlayer);//POR DEFECTO ES MOVER EL TIPO DE MENSAJE PLAYERSERIALIZABLE
+                        socket.send(player,socket);
+                        moverPlayer();
+                    }
+                    break;
+                }
+                case SDL_SCANCODE_E:{
+                    if(canFinishMyTurn){ //SI PUEDO ACABAR TURNO
+                        std::cout<<"Acabo Mi Turno\n";
+                        Message initturno;
+                        initturno.setType(ENDTURN);
+                        socket.send(initturno, socket);
+                        isMyTurn=false;
+                        canBuySomething=false;
+                    }       
+                    break;
+                }
+            default:
+                break;
+            }
+        }
+    }
+}
+void Player::moverPlayer(){
+
+    if(indexPosition>30){
+       Vector2 pos= texturaJugador.getPosition();
+       pos={720,(double)(90+45*(indexPosition%30))};
+       texturaJugador.setPosition(pos);
+       std::cout<<pos.getX()<<" "<<pos.getY()<<"\n";
+    }
+    else if(indexPosition==30){
+    Vector2 pos= texturaJugador.getPosition();
+       pos={(double)(88+60*10+10*0.2),20};
+       texturaJugador.setPosition(pos);
+       std::cout<<pos.getX()<<" "<<pos.getY()<<"\n";
+    }
+    else if(indexPosition>20){
+       Vector2 pos= texturaJugador.getPosition();
+       pos={(double)(88+60*(indexPosition%20)+(indexPosition%20)*0.2),20};
+       texturaJugador.setPosition(pos);
+       std::cout<<pos.getX()<<" "<<pos.getY()<<"\n";
+    }
+    else if(indexPosition==20){
+       Vector2 pos= texturaJugador.getPosition();
+       pos={50,(double)(495-45*10)};
+       texturaJugador.setPosition(pos);
+       std::cout<<pos.getX()<<" "<<pos.getY()<<"\n";
+    }
+    else if(indexPosition>10){
+       Vector2 pos= texturaJugador.getPosition();
+       pos={50,(double)(495-45*(indexPosition%10))};
+       texturaJugador.setPosition(pos);
+       std::cout<<pos.getX()<<" "<<pos.getY()<<"\n";
+    }
+    else if(indexPosition==10){
+       if(!isInJail)texturaJugador.setPosition({25,500});
+       else texturaJugador.setPosition({50,520});
+    }
+    else if(indexPosition==0){
+        texturaJugador.setPosition({693.5,520});
+    }
+    else {
+       Vector2 pos= texturaJugador.getPosition();
+       pos={(double)(693.5-60*(indexPosition%40)-(indexPosition%40)*0.2),520};
+       texturaJugador.setPosition(pos);
+       std::cout<<pos.getX()<<" "<<pos.getY()<<"\n";
     }
 }

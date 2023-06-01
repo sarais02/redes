@@ -1,4 +1,5 @@
-#pragma once
+#ifndef VECTOR_H_
+#define VECTOR_H_
 
 #include <iostream>
 class Vector2{
@@ -8,8 +9,8 @@ class Vector2{
     ~Vector2() = default;
     void setVector2(double t_x, double t_y);
 
-    double getX();
-    double getY();
+    double getX()const;
+    double getY()const;
 
     void operator+=(const Vector2& other);
     void operator-=(const Vector2& other);
@@ -36,3 +37,4 @@ class Vector2{
     double m_x;
     double m_y;
 };
+#endif
