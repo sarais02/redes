@@ -15,13 +15,14 @@ void Server::do_messages()
         {
         case LOGIN:
         {
+            
             IN_OUT in;
             in.from_bin(tmpMessage.data());
             std::unique_ptr<Socket> socket1_(socket_cliente);
             socketsPlayers.push_back(std::move(socket1_));
             std::cout << "LOGIN DE: " << in.nick << "\n";
 
-            PlayerSerializable tmpPLayer(in.nick, 0, 1500, (int)(socketsPlayers.size() - 1));
+            PlayerSerializable tmpPLayer(in.nick, 0, 300, (int)(socketsPlayers.size() - 1));
             players.push_back(tmpPLayer);
 
             break;
@@ -30,17 +31,20 @@ void Server::do_messages()
         {
             IN_OUT out;
             out.from_bin(tmpMessage.data());
-            std::unique_ptr<Socket> socket_(socket_cliente);
+            std::unique_ptr<Socket> socket_(socket_cliente);int i=0;
             for (auto it = socketsPlayers.begin(); it != socketsPlayers.end();)
             {
                 if (*(*it) == *socket_cliente)
                 {
                     socketsPlayers.erase(it);
+                    players[i].dinero=-100;
+                    std::cout << "LOGOUT DE: " << out.nick << "\n";
                 }
                 else
                     ++it;
+                i++;
             }
-            std::cout << "LOGOUT DE: " << out.nick << "\n";
+            
             break;
         }
         case MOVER:
@@ -49,7 +53,7 @@ void Server::do_messages()
             player.from_bin(tmpMessage.data());
             players[player.indexPlayer] = player;
             std::cout << "Player se ha movido: " << player.indexPosition << "\n";
-
+            
             movementConsequences(player.indexPlayer);
             break;
         }
@@ -72,13 +76,25 @@ void Server::do_messages()
         }
         case ENDTURN:
         {
-            std::cout << "ENDTURN\n";
+            std::cout << "ENDTURN "<<players[turnos[indexTurno]].dinero<<"\n";
             canFinishTurn = false;
-            indexTurno = indexTurno + 1 % turnos.size();
-            lastPosPlayer = players[turnos[indexTurno]].indexPosition;
-            Message initturno;
-            initturno.setType(INITURN);
-            socket.send(initturno, *socketsPlayers[turnos[indexTurno]]);
+            int next=(indexTurno + 1) % turnos.size();int x=0;
+            while (players[turnos[next]].dinero<0){
+                next=(next+1)%turnos.size();
+                x++;
+            }
+            if(x==turnos.size()-1){ //has ganado
+                Message victoria;
+                victoria.setType(VICTORIA);
+                socket.send(victoria, *socketsPlayers[turnos[indexTurno]]);
+            }
+            else{ //pasa al siguiente 
+                indexTurno = next; //Avanzo el turno
+                lastPosPlayer = players[turnos[indexTurno]].indexPosition;
+                Message initturno;
+                initturno.setType(INITURN);
+                socket.send(initturno, *socketsPlayers[turnos[indexTurno]]);
+            }
             break;
         }
         case CASA:{          
@@ -117,6 +133,8 @@ void Server::do_messages()
                     calle->setRentIndex(after);
                     std::cout<<"rent actual de "<<calle->getName()<<" es "<<calle->getRentIndex()<<"\n";
                     casa.msgResponse="Se han quitado "+std::to_string(quitar)+" casas\n";
+                    
+                    players[turnos[indexTurno]].dinero+=dinero;
                 }
                 else casa.msgResponse="No puedes quitar casas\n";
             }
@@ -219,6 +237,9 @@ void Server::initPlayers(){
         std::cout << "ENVIADO " << players[i].indexPlayer << "\n";
         i++;
     }
+    for(int i=0; i<socketsPlayers.size();i++){
+        mensajesActualizacionMovimiento(i);
+    }
     Message initturno;
     initturno.setType(INITURN);
     socket.send(initturno, *socketsPlayers[turnos[indexTurno]]);
@@ -226,9 +247,17 @@ void Server::initPlayers(){
     std::cout << "ENVIADO TURNO A: " << turnos[indexTurno] << "\n";
 };
 
+void Server::mensajesActualizacionMovimiento(int indexMovido){
+    for (auto it = socketsPlayers.begin(); it != socketsPlayers.end(); ++it){
+            if(!(*(*it)==*socketsPlayers[indexMovido])){
+                socket.send(players[indexMovido], *(*it));
+            }
+        }
+}
+
 void Server::movementConsequences(int indexPlayer){
     int posPlayer = players[indexPlayer].indexPosition;
-
+    mensajesActualizacionMovimiento(indexPlayer);
     switch (tablero[posPlayer]->getType())
     {
     case SERVICIOS:
@@ -261,11 +290,13 @@ void Server::movementConsequences(int indexPlayer){
             PagarMsg pagar(dinero); 
             pagar.setType(PAGAR);
             socket.send(pagar, *socketsPlayers[turnos[indexTurno]]);
+            players[turnos[indexTurno]].dinero-=dinero;
             std::cout << "EL JUGADOR: " << players[indexPlayer].nick << " DEBE PAGAR: " << dinero << " DE ALQUILER\n";
             //Mensaje para que el propietario cobre
             PagarMsg cobrar(dinero);
             cobrar.setType(COBRAR);
             socket.send(cobrar, *socketsPlayers[calle->getProperty()]);
+            players[calle->getProperty()].dinero+=dinero;
             std::cout << "EL JUGADOR: " << players[indexPlayer].nick << " DEBE PAGAR: " << dinero << " DE ALQUILER A: "<< players[calle->getProperty()].nick<<"\n";
 
             canFinishTurn = true;
@@ -284,6 +315,7 @@ void Server::movementConsequences(int indexPlayer){
         PagarMsg p(impuesto->getPrice());
         p.setType(PAGAR);
         socket.send(p, *socketsPlayers[turnos[indexTurno]]);
+        players[turnos[indexTurno]].dinero-=impuesto->getPrice();
         std::cout << "EL JUGADOR: " << players[indexPlayer].nick << " DEBE PAGAR: " << impuesto->getName() << "\n";
 
         ///// REVISAR, EL JUGADOR PUEDE ACABAR SU TURNO SIN HABER PAGADO
@@ -299,6 +331,7 @@ void Server::movementConsequences(int indexPlayer){
         PagarMsg p(salida->getReward());
         p.setType(COBRAR);
         socket.send(p, *socketsPlayers[turnos[indexTurno]]);
+         players[turnos[indexTurno]].dinero+=salida->getReward();
         std::cout << "EL JUGADOR: " << players[indexPlayer].nick << " COBRA: " << salida->getReward() << "\n";
 
         canFinishTurn = true;
@@ -336,6 +369,7 @@ void Server::movementConsequences(int indexPlayer){
             PagarMsg p(aux.second);
             p.setType(PAGAR);
             socket.send(p, *socketsPlayers[turnos[indexTurno]]);
+            players[turnos[indexTurno]].dinero-=aux.second;
             std::cout << "JUGADOR: " << players[indexPlayer].nick <<" "<<aux.first << "\n";
         }
         else if(rand==1){
@@ -346,6 +380,7 @@ void Server::movementConsequences(int indexPlayer){
             PagarMsg p(aux.second);
             p.setType(COBRAR);
             socket.send(p, *socketsPlayers[turnos[indexTurno]]);
+             players[turnos[indexTurno]].dinero+=aux.second;
             std::cout << "JUGADOR: " << players[indexPlayer].nick <<" "<<aux.first << "\n";
         }
         else{
@@ -376,6 +411,7 @@ void Server::movementConsequences(int indexPlayer){
             PagarMsg p(aux.second);
             p.setType(PAGAR);
             socket.send(p, *socketsPlayers[turnos[indexTurno]]);
+            players[turnos[indexTurno]].dinero-=aux.second;
             std::cout << "JUGADOR: " << players[indexPlayer].nick <<" "<<aux.first << "\n";
         }
         else if(rand==1){
@@ -386,6 +422,7 @@ void Server::movementConsequences(int indexPlayer){
             PagarMsg p(aux.second);
             p.setType(COBRAR);
             socket.send(p, *socketsPlayers[turnos[indexTurno]]);
+             players[turnos[indexTurno]].dinero+=aux.second;
             std::cout << "JUGADOR: " << players[indexPlayer].nick <<" "<<aux.first << "\n";
         }
         else{

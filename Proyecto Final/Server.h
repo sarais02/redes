@@ -67,6 +67,10 @@ private:
     */
     void initPlayers();
     /**
+    * mensajes para el resto de jugadores actuializar
+    */
+    void mensajesActualizacionMovimiento(int indexMovido);
+    /**
     * Consequencias del movimiento del jugador
     */
     void movementConsequences(int indexPlayer);

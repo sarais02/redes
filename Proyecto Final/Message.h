@@ -23,11 +23,13 @@ enum TypesMessages : u_int8_t {
     COBRAR=11,
     CASA=12,
     IRACARCEL=13,
-    HIPOTECA=14
+    HIPOTECA=14,
+    CONFIRMCARCEL=15,
+    VICTORIA=16
 };
 class Message:public Serializable{
 public:
-    static const size_t MESSAGE_SIZE = 1024;
+    static const size_t MESSAGE_SIZE = 512;
     Message();
     virtual void to_bin() override;
     virtual int from_bin(char * bobj) override;

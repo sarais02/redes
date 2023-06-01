@@ -57,7 +57,7 @@ public:
     //SDL
     void bucleVentana();
     void gestionEventos();
-    void moverPlayer();
+    void moverPlayer(int indexPosition,SDLTexture *textura);
 private:
 
     /**
@@ -68,10 +68,15 @@ private:
      * Booleano que representa si es el turno del jugador
      */
     bool isMyTurn = false;
-     /**
-     * Booleano que representa si el jugador puede terminar su turno
-     */
+    /**
+    * Booleano que representa si el jugador puede terminar su turno
+    */
     bool canFinishMyTurn = false;
+    /**
+    * Booleano que representa si el jugador esta jugando
+    */
+    bool onGame=false;
+
     /**
      * Booleano que representa si el jugador puede comprar una casilla
      */
@@ -108,7 +113,16 @@ private:
     bool isInJail=false;
     bool exit=false;
     int moneyToPay;
+    //PROPIEDADES DEL JUGADOR
     std::unordered_map<int,std::string> playerProperties;
+    //JUGADORES DE LA PARTIDA
+    std::unordered_map<int,PlayerSerializable> players;
+
+    std::vector<std::string> nombresImagenes=std::vector<std::string>({"Images/Coche.png","Images/Carretilla.png",
+                                                                            "Images/Zapato.png","Images/Dedal.png",
+                                                                            "Images/Perro.png","Images/Plancha.png","Images/Sombrero.png"});
+    std::vector<int> randomss;
+    std::unordered_map<int,SDLTexture> jugadores;
 
     SDLTexture texturaMapa;
     SDLTexture texturaJugador;

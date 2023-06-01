@@ -9,8 +9,8 @@ class Vector2{
     ~Vector2() = default;
     void setVector2(double t_x, double t_y);
 
-    double getX()const;
-    double getY()const;
+    double getX();
+    double getY();
 
     void operator+=(const Vector2& other);
     void operator-=(const Vector2& other);
