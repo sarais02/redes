@@ -126,7 +126,7 @@ void Server::do_messages()
                         after=0;               
                     }
                     else quitar=casa.numCasas;
-                    int dinero= quitar*25;
+                    int dinero= quitar*calle->getHousePrice()/2;
                     PagarMsg cobrar(dinero);
                     cobrar.setType(COBRAR);
                     socket.send(cobrar, *socketsPlayers[calle->getProperty()]);
