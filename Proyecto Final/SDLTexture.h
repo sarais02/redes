@@ -3,7 +3,7 @@
 #include <SDL2/SDL_image.h>
 #include "Vector2.h"
 #include <string>
-#include <SDL_ttf.h>
+#include <SDL2/SDL_ttf.h>
 using namespace std;
 
 
