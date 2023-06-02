@@ -10,7 +10,6 @@
 #include <SDL2/SDL_ttf.h>
 
 #include "Singleton.h"
-#include "RandomNumberGenerator.h"
 #include "macros.h"
 
 class SDLUtils: public Singleton<SDLUtils> {
@@ -81,16 +80,6 @@ public:
 		SDL_ShowCursor(0);
 	}
 
-	// All resource maps can be modified from outside, this way you can store
-	// your own dynamically. Be careful when modifying them!
-
-	// Access to the random number generator. It is important to always
-	// use this generator, this way you can regenerate the same sequence
-	// if you start from the same seed
-	inline RandomNumberGenerator& rand() {
-		return random_;
-	}
-
 	// Access to real time
 	inline Uint32 currRealTime() const {
 		return SDL_GetTicks();
@@ -113,7 +102,6 @@ private:
 	SDL_Window *window_; // the window
 	SDL_Renderer *renderer_; // the renderer
 
-	RandomNumberGenerator random_; // (pseudo) random numbers generator
 };
 #endif
 

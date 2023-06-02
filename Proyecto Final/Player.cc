@@ -63,11 +63,12 @@ void Player::loadWindow(){
     mensajeCARCEL=SDLTexture(SDLUtils::instance()->renderer(), "Images/mensajeCarcel.png",{200,100,350,100});
     mensajeCARCEL.setVisibility(false);
 
-    botones.insert({"CARCEL_NO",new Button(SDLUtils::instance()->renderer(), "Images/NO.png",{250,175,50,50},this,nullptr)});
+    botones.insert({"CARCEL_NO",new Button(SDLUtils::instance()->renderer(), "Images/NO.png",{250,175,50,50},this,&Player::carcelNo)});
     botones["CARCEL_NO"]->setVisibility(false);
 
-    botones.insert({"CARCEL_SI",new Button(SDLUtils::instance()->renderer(), "Images/SI.png",{450,175,50,50},this,nullptr)});
+    botones.insert({"CARCEL_SI",new Button(SDLUtils::instance()->renderer(), "Images/SI.png",{450,175,50,50},this,&Player::carcelSi)});
     botones["CARCEL_SI"]->setVisibility(false);
+
 }
 
 void Player::input_thread(){
@@ -82,21 +83,7 @@ void Player::input_thread(){
                 logout();
                 break;
             }
-            if(isMyTurn){               
-                if(msg=="s" && isInJail && money>=moneyToPay){
-                    isInJail=false;
-                    money-=moneyToPay;
-                    std::cout<<"Fianza Pagada\n";
-                }
-                if(msg=="n" && isInJail){
-                    std::cout<<"Te quedas en la carcel\n";
-                    std::cout<<"Se acaba tu turno\n";
-                    Message initturno;
-                    initturno.setType(ENDTURN);
-                    socket.send(initturno, socket);
-                    isMyTurn=false;
-                    canBuySomething=false;
-                }
+            if(isMyTurn){                              
                 if(msg[0]=='p'){
                     std::istringstream iss(msg);
                     std::string index,numCasas,quitar;
@@ -110,15 +97,18 @@ void Player::input_thread(){
                         if(quitar=="q")casa.quitarCasas=1;
                         socket.send(casa, socket);
                     }
-                }                                             
+                }  
+                if(msg=="money"){
+                    std::cout<<"Mi dinero: "<<money<<"\n";
+                }                                          
             }
         }        
     }
-    std::cout<<"termina\n";
+    std::cout<<"HILO PRINCIPAL DEL PROGRAMA CERRADO\n";
 }
 
 void Player::net_thread(){
-    while(true)
+    while(!exit)
     {
         //Recibir Mensajes de red
         Message tmpMessage;
@@ -133,7 +123,8 @@ void Player::net_thread(){
                     indexPosition=playerMSG.indexPosition;
                     indexPlayer=playerMSG.indexPlayer;
                     money=playerMSG.dinero;
-                    std::cout<<"JUGADO MOVIDO "<<indexPlayer<<"\n";                                      
+                    std::cout<<"JUGADO MOVIDO "<<indexPlayer<<"\n";
+                    moverPlayer(indexPosition,&texturaJugador);                                      
                 }
                 else{
                     std::cout<<"RECIBO UN PLAYER"<<playerMSG.indexPlayer<<"\n";
@@ -151,20 +142,25 @@ void Player::net_thread(){
                 std::cout<<"MI TURNO\n";
                 if(isInJail){
                     cont++;
-                    if(cont>3) //Si ya lleva 3 turnos en la carcel sale
+                    if(cont>=3) //Si ya lleva 3 turnos en la carcel sale
                     {
                         cont=0;
                         isMyTurn=true;
                         canFinishMyTurn=false;
+                        isInJail=false; 
+                        std::cout<<"SALGO DE LA CARCEL\n";
+                        botones["dados"]->setVisibility(true);  
+                        miTurno.setVisibility(true);                      
                     }
                     else //Si no acabo mi turno
                     {
                         isMyTurn=false;
+                        canFinishMyTurn=false;
                         std::cout<<"Acabo Mi Turno\n";
                         Message initturno;
                         initturno.setType(ENDTURN);
                         socket.send(initturno, socket);
-                        canBuySomething=false;
+                        canBuySomething=false;                        
                     }
                 }
                 else{
@@ -180,14 +176,15 @@ void Player::net_thread(){
                 canFinishMyTurn=true;
                 break;
             } 
-            case COMPRAR:{
-                botones["comprarBoton"]->setVisibility(true);
+            case COMPRAR:{             
                 compra = ComprarCalleMsg();
                 canBuySomething=true;
                 compra.from_bin(tmpMessage.data());
+
+                moverPlayer(compra.indexCasilla,botones["comprarBoton"],{60,20}); 
+                botones["comprarBoton"]->setVisibility(true);      
                 //GUARDARME LO K PUEDO COMPRAR
-                std::cout<<compra.indexCasilla<<"\n";
-                std::cout<<"Quieres comprar "<<compra.nombre<<" por "<<compra.buyPrice<<"? PRESS C TO BUY \n";
+                std::cout<<"Quieres comprar "<<compra.nombre<<" por "<<compra.buyPrice<<"? PRESS C TO BUY \n";               
                 break;
             } 
             case PAGAR:{
@@ -210,8 +207,11 @@ void Player::net_thread(){
                 CarcelMsg carcel;
                 carcel.from_bin(tmpMessage.data());
                 moneyToPay=carcel.buyPrice;
-                std::cout<<"Quieres pagar "<<moneyToPay<<
-                " para salir de la carcel? PRESS S TO ACCEPT OR N TO REJECT \n";
+                //std::cout<<"Quieres pagar "<<moneyToPay<<
+                //" para salir de la carcel? PRESS S TO ACCEPT OR N TO REJECT \n";
+                mensajeCARCEL.setVisibility(true);
+                botones["CARCEL_SI"]->setVisibility(true);
+                botones["CARCEL_NO"]->setVisibility(true);
                 break;
             }
             case CASA:{
@@ -247,6 +247,7 @@ void Player::net_thread(){
             case VICTORIA:{
                 onGame=false;
                 cout<<"HAS GANADO\n";
+                win_or_lose= SDLTexture(SDLUtils::instance()->renderer(), "Images/HASGANADO.png",{350,100,100,100});
             }
         }        
     }
@@ -256,12 +257,17 @@ void Player::bucleVentana(){
     while(!exit){
         Uint32 startTime = sdlutils().currRealTime();
         gestionEventos();
+        if(sdlutils().instance()->renderer()==nullptr)break;
         //RENDERIZAR IMAGENES       
-        sdlutils().clearRenderer({0, 0, 0});      
+        sdlutils().clearRenderer({0, 0, 0}); 
+
         texturaMapa.render();
         texturaJugador.render();
         miTurno.render();
         mensajeCARCEL.render();
+
+        if(win_or_lose.getSDLTex()!=nullptr)win_or_lose.render();
+
         for(auto it=jugadores.begin();it!=jugadores.end();it++){
             it->second.render();
         }         
@@ -275,7 +281,8 @@ void Player::bucleVentana(){
             for(int i=0;i<it->second.size();i++){
                 it->second[i].render();
             }             
-        }
+        }      
+
         sdlutils().presentRenderer();//TE PRESENTA LOS CAMBIOS EN LA VENTANA
         Uint32 frameTime = sdlutils().currRealTime() - startTime;
 		if (frameTime < 20)
@@ -287,11 +294,10 @@ void Player::gestionEventos(){
     SDL_Event event;
     while (SDL_PollEvent(&event)){
         for (auto it=botones.begin();it!=botones.end();it++){
-          if(it->second->getVisibility()) it->second->handleEvent(event);
+          it->second->handleEvent(event);
         }
         if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)){
             exit=true;
-            std::cout<<"CERRAR VENTANA\n";
             sdlutils().closeWindow();
             logout();              
         }
@@ -300,8 +306,8 @@ void Player::gestionEventos(){
                 case SDL_SCANCODE_SPACE:{ //TIRAR LOS DADOS
                     if(isMyTurn&&!canFinishMyTurn){ //TIRAR DADOS
                         botones["dados"]->setVisibility(false);                                
-                        int dado1=1; //std::rand() %6 + 1;
-                        int dado2=0; //std::rand() %6 + 1;
+                        int dado1 = std::rand() %6 + 1;
+                        int dado2 = std::rand() %6 + 1;
                         int suma=dado1+dado2+indexPosition;
                         suma%=40;
                         if(suma<indexPosition && suma!=0) //Si suma justo es la salida no entra porq se sumaria 2 veces
@@ -320,26 +326,7 @@ void Player::gestionEventos(){
                     break;
                 }
                 case SDL_SCANCODE_E:{
-                    if(isMyTurn&&canFinishMyTurn){ //SI PUEDO ACABAR TURNO
-                       
-                        std::cout<<"Acabo Mi Turno\n";
-                        miTurno.setVisibility(false);
-                        botones["comprarBoton"]->setVisibility(false);
-                        Message initturno;
-                        initturno.setType(ENDTURN);
-                        socket.send(initturno, socket);
-                        isMyTurn=false;
-                        canBuySomething=false;
-                        if(money<0){
-                            onGame=false;
-                            std::cout<<"BANCA ROTA\n";
-                            for(auto it:playerProperties){
-                                HipotecaMsg hipoteca(it.first,1);
-                                socket.send(hipoteca,socket);
-                            }
-                        }
-                        std::cout<<"Money: "<<money<<"\n";
-                    }       
+                    terminarTurno();
                     break;
                 }
             default:
@@ -432,7 +419,6 @@ void Player::tirarDados(){
 }
 
 void Player::hipotecar(int index,bool wasclicked){
-    std::cout<<"entraa\n";
     if(isMyTurn){      
         int aux=!wasclicked?1:0;
 
@@ -453,4 +439,57 @@ void Player::colocarCasas(int index,int num,bool quitar){
            casasCasilla[index].pop_back();
         } 
     }
+}
+
+void Player::carcelSi(){
+    if(isMyTurn&&  isInJail && money>=moneyToPay){
+        isInJail=false;
+        money-=moneyToPay;
+        PagarMsg pagar(moneyToPay);
+        pagar.setType(CONFIRMCARCEL);
+        socket.send(pagar, socket);
+        std::cout<<"Fianza Pagada\n";
+        mensajeCARCEL.setVisibility(false);
+        botones["CARCEL_SI"]->setVisibility(false);
+        botones["CARCEL_NO"]->setVisibility(false);
+        miTurno.setVisibility(false);
+        isMyTurn=false;
+        canBuySomething=false;
+    }
+               
+}
+
+void Player::carcelNo(){
+    if(isMyTurn && isInJail){
+        std::cout<<"Te quedas en la carcel\n";
+        std::cout<<"Se acaba tu turno\n";
+        terminarTurno();
+    }
+}
+
+void Player::terminarTurno(){
+    if(isMyTurn&&canFinishMyTurn){ //SI PUEDO ACABAR TURNO
+                       
+        std::cout<<"Acabo Mi Turno\n";
+        miTurno.setVisibility(false);
+        botones["comprarBoton"]->setVisibility(false);
+        mensajeCARCEL.setVisibility(false);
+        botones["CARCEL_SI"]->setVisibility(false);
+        botones["CARCEL_NO"]->setVisibility(false);
+        isMyTurn=false;
+        Message initturno;
+        initturno.setType(ENDTURN);
+        socket.send(initturno, socket);  
+        canBuySomething=false;
+        if(money<0){
+            onGame=false;
+            std::cout<<"BANCA ROTA\n";
+            for(auto it:playerProperties){
+                HipotecaMsg hipoteca(it.first,1);
+                socket.send(hipoteca,socket);
+            }
+            win_or_lose= SDLTexture(SDLUtils::instance()->renderer(), "Images/BANCAROTA.png",{350,100,100,100});
+        }
+        std::cout<<"Money: "<<money<<"\n";
+    }       
 }

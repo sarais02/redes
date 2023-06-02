@@ -11,11 +11,9 @@ void Server::do_messages()
         Socket *socket_cliente;
         int x = socket.recv(tmpMessage, &socket_cliente);
 
-        switch (tmpMessage.getType())
-        {
-        case LOGIN:
-        {
-            
+        switch (tmpMessage.getType()){
+        case LOGIN:{   
+            if(onGame)break;         
             IN_OUT in;
             in.from_bin(tmpMessage.data());
             std::unique_ptr<Socket> socket1_(socket_cliente);
@@ -27,8 +25,7 @@ void Server::do_messages()
 
             break;
         }
-        case LOGOUT:
-        {
+        case LOGOUT:{
             IN_OUT out;
             out.from_bin(tmpMessage.data());
             std::unique_ptr<Socket> socket_(socket_cliente);int i=0;
@@ -47,8 +44,7 @@ void Server::do_messages()
             
             break;
         }
-        case MOVER:
-        {
+        case MOVER:{
             PlayerSerializable player;
             player.from_bin(tmpMessage.data());
             players[player.indexPlayer] = player;
@@ -57,16 +53,14 @@ void Server::do_messages()
             movementConsequences(player.indexPlayer);
             break;
         }
-        case COMPRAR:
-        { // actualizar el estado del tablero
+        case COMPRAR:{ // actualizar el estado del tablero
             ComprarCalleMsg comprar;
             comprar.from_bin(tmpMessage.data());
             players[turnos[indexTurno]].dinero -= comprar.buyPrice;
             comprarCasilla();
             break;
         }
-        case PAGADO:
-        { // cuando el jugador paga puede terminar su turno
+        case PAGADO:{ // cuando el jugador paga puede terminar su turno
             std::cout << "PAGADO\n";
             canFinishTurn = true;
             Message canFinish;
@@ -74,8 +68,13 @@ void Server::do_messages()
             socket.send(canFinish, *socketsPlayers[turnos[indexTurno]]);
             break;
         }
-        case ENDTURN:
-        {
+        case CONFIRMCARCEL:{
+            PagarMsg pagar;
+            pagar.from_bin(tmpMessage.data());
+            players[turnos[indexTurno]].dinero-=pagar.buyPrice;
+            std::cout<<players[turnos[indexTurno]].nick<<" PAGA LA SALIDA DE LA CARCEL\n";
+        }
+        case ENDTURN:{
             std::cout << "ENDTURN "<<players[turnos[indexTurno]].dinero<<"\n";
             canFinishTurn = false;
             int next=(indexTurno + 1) % turnos.size();int x=0;
@@ -353,8 +352,10 @@ void Server::movementConsequences(int indexPlayer){
     {
         Carcel *carcel=dynamic_cast<Carcel*>(tablero[posPlayer]);
         //Muevo al jugador a la carcel
-        PlayerSerializable player(players[indexPlayer].nick,10,players[indexPlayer].dinero,indexPlayer);
-        socket.send(player,*socketsPlayers[turnos[indexTurno]]);
+        players[indexPlayer].indexPosition=10;
+        
+        socket.send(players[indexPlayer],*socketsPlayers[turnos[indexTurno]]);
+        mensajesActualizacionMovimiento(indexPlayer);
         //Mensaje de carcel
         CarcelMsg m(carcel->getPrice()); //Dinero que cuesta salir de la carcel
         m.setType(IRACARCEL);

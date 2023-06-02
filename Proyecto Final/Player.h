@@ -147,5 +147,8 @@ private:
     void tirarDados();
     void hipotecar(int index,bool wasclicked);
     void colocarCasas(int index,int num,bool quitar);
+    void carcelSi();
+    void carcelNo();
+    void terminarTurno();
 };
 #endif

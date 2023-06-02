@@ -3,7 +3,47 @@
 #include <SDL2/SDL_image.h>
 #include "Vector2.h"
 #include <string>
+#include <SDL_ttf.h>
 using namespace std;
+
+
+class Font {
+public:
+	Font() : font_(nullptr) {}
+    Font(const std::string& fontFile, int fontSize) {
+
+        font_ = TTF_OpenFont(fontFile.c_str(), fontSize);
+        if (!font_) {
+            // Manejar el error si no se pudo cargar la fuente
+			std::cout<<"ERROR AL ABRIR LA FUENTE\n";
+        }
+    }
+    
+	// cannot copy textures
+	Font(const Font&) = delete;
+	Font& operator=(const Font&) = delete;
+
+	// can be moved
+	Font& operator=(Font &&other) noexcept;
+	Font(Font &&other) noexcept;
+
+
+    ~Font() {
+        TTF_CloseFont(font_);
+        TTF_Quit();
+    }
+    
+	SDL_Surface* RenderText(const std::string& text, SDL_Color color) const {
+		if(font_==nullptr)std::cout<<"curisoso\n";
+       SDL_Surface* surface = nullptr;
+	   
+	   surface = TTF_RenderText_Blended(font_, text.data(), color);
+		return surface;
+    }	
+    
+private:
+    TTF_Font* font_;
+};
 
 class SDLTexture {
 protected:
@@ -17,7 +57,7 @@ protected:
 public:
 	SDLTexture();
 	SDLTexture(SDL_Renderer* renderer, const string& fileName,SDL_Rect Dest);
-	//SDLTexture(SDL_Renderer* renderer, const string& text, const Font* font, const SDL_Color& color);
+	SDLTexture(SDL_Renderer* renderer, const string& text, const Font* font, const SDL_Color& color);
 	SDLTexture(SDL_Renderer* renderer, SDL_Surface* src, SDL_Rect* srcRect, SDL_Surface* dest, SDL_Rect* destRect);
 	
 	// cannot copy textures
@@ -53,7 +93,9 @@ public:
 	bool loadFromImg(SDL_Renderer* renderer, const string& fileName);
 
 	//Carga las texturas a partir de un texto con una fuente
-	//bool loadFromText(SDL_Renderer* renderer, const string& text, const Font* font, const SDL_Color& color = { 0, 0, 0, 255 });
+	bool loadFromText(SDL_Renderer* renderer, const string& text, const Font* font, const SDL_Color& color = { 0, 0, 0, 255 });
+
+	void ChangeText(const std::string& newText, const Font& font, const SDL_Color& color);
 
 	//Carga texturas a partir de dos surface para hacer un blit
 	bool loadFromSurface(SDL_Renderer* renderer, SDL_Surface* src, SDL_Rect* srcRect, SDL_Surface* dest, SDL_Rect* destRect);

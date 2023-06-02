@@ -4,6 +4,23 @@
 #include <iostream>
 using namespace std;
 
+Font::Font(Font&& other) noexcept : font_(nullptr) {
+    font_ = other.font_;
+    other.font_ = nullptr;
+}
+
+Font& Font::operator=(Font&& other) noexcept {
+    if (this != &other) {
+        if (font_) {
+            TTF_CloseFont(font_);
+        }
+        font_ = other.font_;
+        other.font_ = nullptr;
+    }
+    return *this;
+}
+
+
 SDLTexture::SDLTexture() : texture_(nullptr), renderer_(nullptr), width_(0), height_(0),position(0,0) {
 }
 
@@ -11,11 +28,11 @@ SDLTexture::SDLTexture(SDL_Renderer* renderer, const string& fileName,SDL_Rect D
 	loadFromImg(renderer, fileName);
 	setPosition({(double)dest.x,(double)dest.y});
 }
-/*
-Texture::Texture(SDL_Renderer* renderer, const string& text, const Font* font, const SDL_Color& color) :
+
+SDLTexture::SDLTexture(SDL_Renderer* renderer, const string& text, const Font* font, const SDL_Color& color) :
 	texture_(nullptr), width_(0), height_(0) {
 	loadFromText(renderer, text, font, color);
-}*/
+}
 
 SDLTexture::SDLTexture(SDL_Renderer* renderer, SDL_Surface* src, SDL_Rect* srcRect, SDL_Surface* dest, SDL_Rect* destRect) :
 	texture_(nullptr), width_(0), height_(0) {
@@ -97,6 +114,43 @@ bool SDLTexture::loadFromSurface(SDL_Renderer* renderer, SDL_Surface* src, SDL_R
 	}
 	renderer_ = renderer;
 	return texture_ != nullptr;
+}
+
+bool SDLTexture::loadFromText(SDL_Renderer* renderer, const std::string& text, const Font* font, const SDL_Color& color) {
+    // Renderizar el texto en una superficie
+    SDL_Surface* surface = font->RenderText(text, color);
+    if (surface != nullptr) {
+        close(); // Destruye la textura actual para sustituirla
+        texture_ = SDL_CreateTextureFromSurface(renderer, surface);
+        if (texture_ != nullptr) {
+            width_ = surface->w;
+            height_ = surface->h;
+        }
+        SDL_FreeSurface(surface);
+    }
+    else {
+        throw "No se puede renderizar el texto: " + text;
+    }
+    
+    renderer_ = renderer;
+    return texture_ != nullptr;
+}
+
+void SDLTexture::ChangeText(const std::string& newText, const Font& font, const SDL_Color& color) {
+	// Renderizar el nuevo texto en una superficie
+	SDL_Surface* surface = font.RenderText(newText, color);
+	if (surface != nullptr) {
+		// Destruir la textura actual
+		SDL_DestroyTexture(texture_);
+		
+		// Crear una nueva textura a partir de la superficie
+		texture_ = SDL_CreateTextureFromSurface(renderer_, surface);
+		if (texture_ != nullptr) {
+			width_ = surface->w;
+			height_ = surface->h;
+		}
+		SDL_FreeSurface(surface);
+	}
 }
 
 void SDLTexture::setSize(int wd,int hd){

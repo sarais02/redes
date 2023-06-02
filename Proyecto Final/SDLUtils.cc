@@ -37,7 +37,7 @@ void SDLUtils::initWindow() {
 	// hideCursor();
 }
 
-void SDLUtils::initSDLExtensions() {
+void SDLUtils::initSDLExtensions() {	        
 	// initialize SDL_ttf
 	int ttfInit_r = TTF_Init();
 	assert(ttfInit_r == 0);
