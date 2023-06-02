@@ -14,6 +14,7 @@
 #include "Message.h"
 #include "SDLUtils.h"
 #include "SDLTexture.h"
+class Button;
 /**
  *  Clase para el cliente de chat
  */
@@ -26,7 +27,7 @@ public:
      */
     Player(const char * s, const char * p, const char * n):socket(s, p),
         nick(n){playerProperties=std::unordered_map<int,std::string>();};
-
+    ~Player();
     /**
      *  Envía el mensaje de login al servidor
      */
@@ -126,5 +127,9 @@ private:
 
     SDLTexture texturaMapa;
     SDLTexture texturaJugador;
+    //Button* boton;
+    void foo() {
+        std::cout << "Button clicked! Server method executed." << std::endl;
+    }
 };
 #endif

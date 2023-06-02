@@ -1,10 +1,12 @@
+#ifndef SDLTexture_H_
+#define SDLTexture_H_
 #include <SDL2/SDL_image.h>
 #include "Vector2.h"
 #include <string>
 using namespace std;
 
 class SDLTexture {
-private:
+protected:
 	SDL_Texture* texture_;
 	SDL_Renderer* renderer_;
 	int width_;
@@ -70,3 +72,4 @@ public:
 
 	void close();
 };
+#endif

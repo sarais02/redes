@@ -5,7 +5,7 @@
 #include <sstream>
 #include <thread>
 #include <random>
-
+#include "Button.h"
 void Player::login(){
     std::string msg;
     std::srand(std::time(0));
@@ -24,7 +24,9 @@ void Player::login(){
         randomss[rand] = i;
     }
 }
-
+Player::~Player(){
+   // delete boton;
+}
 void Player::logout(){
     // Completar
     std::string msg;
@@ -47,6 +49,7 @@ void Player::loadWindow(){
     texturaJugador=SDLTexture(SDLUtils::instance()->renderer(), "Images/Barco.png",{20,20,25,25});  
     texturaJugador.setPosition({693.5,520});
     
+    //boton = new Button(SDLUtils::instance()->renderer(), "Images/Barco.png",{50,50,60,60}, this, &Player::foo);
 }
 
 void Player::input_thread(){
@@ -297,7 +300,7 @@ void Player::bucleVentana(){
         for(auto it=jugadores.begin();it!=jugadores.end();it++){
             it->second.render();
         }         
-
+        //boton->render();
         sdlutils().presentRenderer();//TE PRESENTA LOS CAMBIOS EN LA VENTANA
         Uint32 frameTime = sdlutils().currRealTime() - startTime;
 		if (frameTime < 20)
@@ -307,6 +310,7 @@ void Player::bucleVentana(){
 void Player::gestionEventos(){
     SDL_Event event;
     while (SDL_PollEvent(&event)){
+        //boton->handleEvent(event);
         if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)){
             exit=true;
             std::cout<<"CERRAR VENTANA\n";
