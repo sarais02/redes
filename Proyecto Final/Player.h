@@ -58,7 +58,7 @@ public:
     //SDL
     void bucleVentana();
     void gestionEventos();
-    void moverPlayer(int indexPosition,SDLTexture *textura);
+    void moverPlayer(int indexPosition,SDLTexture *textura,Vector2 Offset={0,0});
 private:
 
     /**
@@ -124,12 +124,28 @@ private:
                                                                             "Images/Perro.png","Images/Plancha.png","Images/Sombrero.png"});
     std::vector<int> randomss;
     std::unordered_map<int,SDLTexture> jugadores;
-
+    //mapa
     SDLTexture texturaMapa;
+    //jugador
     SDLTexture texturaJugador;
-    //Button* boton;
-    void foo() {
-        std::cout << "Button clicked! Server method executed." << std::endl;
-    }
+    //textura q sera a asociada una si pierde y otra si gana
+    SDLTexture win_or_lose;
+
+    //mensajes de carcel
+    SDLTexture mensajeCARCEL;
+
+    //textura q indica si es mi turno
+    SDLTexture miTurno;
+    //botones para cada propiedad del jugador
+    std::unordered_map<std::string,Button*> botones;
+    //marcas de hipotecas
+    std::unordered_map<int,SDLTexture> marcaHipoteca;
+    //casas de cada casilla
+    std::unordered_map<int,std::vector<SDLTexture>> casasCasilla;
+    
+    void comrarCalle();
+    void tirarDados();
+    void hipotecar(int index,bool wasclicked);
+    void colocarCasas(int index,int num,bool quitar);
 };
 #endif

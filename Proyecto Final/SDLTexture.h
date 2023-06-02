@@ -13,7 +13,7 @@ protected:
 	int height_;
     Vector2 position;
 	SDL_Rect dest;
-
+	bool visible=true;
 public:
 	SDLTexture();
 	SDLTexture(SDL_Renderer* renderer, const string& fileName,SDL_Rect Dest);
@@ -28,7 +28,8 @@ public:
 	SDLTexture& operator=(SDLTexture &&other) noexcept;
 	SDLTexture(SDLTexture &&other) noexcept;
 
-
+	inline void setVisibility(bool Visible){visible=Visible;};
+	inline bool getVisibility(){return visible;};
 
 	virtual ~SDLTexture();
 

@@ -22,7 +22,7 @@ void Server::do_messages()
             socketsPlayers.push_back(std::move(socket1_));
             std::cout << "LOGIN DE: " << in.nick << "\n";
 
-            PlayerSerializable tmpPLayer(in.nick, 0, 300, (int)(socketsPlayers.size() - 1));
+            PlayerSerializable tmpPLayer(in.nick, 0, 500, (int)(socketsPlayers.size() - 1));
             players.push_back(tmpPLayer);
 
             break;
@@ -104,10 +104,12 @@ void Server::do_messages()
                 if (tengoColor(casa.indexPosition)){ //SI TENGO TODAS DEL MISMO COLOR
                     Calle* calle=dynamic_cast<Calle *>(tablero[casa.indexPosition]);
                     int after=calle->getRentIndex();
-                    if(tryPonerCasas(casa.indexPosition,casa.numCasas)){
-                        after=after+casa.numCasas>5? (5-after):casa.numCasas;
+                    after=after+casa.numCasas>5? (5-after):casa.numCasas;
+                    if(tryPonerCasas(casa.indexPosition,after)){                      
                         casa.msgResponse="Se han puesto " + std::to_string(after)+" casas en " 
                         + calle->getName() + "\n";
+                        casa.numCasas=after;
+                        casa.quitarCasas=2;
                     }
                     else  casa.msgResponse="No dispones de suficiente Dinero para poner ese numero de casas\n";             
                 }
@@ -133,13 +135,16 @@ void Server::do_messages()
                     calle->setRentIndex(after);
                     std::cout<<"rent actual de "<<calle->getName()<<" es "<<calle->getRentIndex()<<"\n";
                     casa.msgResponse="Se han quitado "+std::to_string(quitar)+" casas\n";
-                    
+                    casa.numCasas=quitar;
                     players[turnos[indexTurno]].dinero+=dinero;
+                    casa.quitarCasas=3;
                 }
                 else casa.msgResponse="No puedes quitar casas\n";
             }
             std::cout<<casa.msgResponse;
-            socket.send(casa, *socketsPlayers[turnos[indexTurno]]);           
+            for(auto it=socketsPlayers.begin();it!=socketsPlayers.end();it++){
+                socket.send(casa, *(*it));
+            }            
             break;
         }
         case HIPOTECA:{
@@ -304,9 +309,13 @@ void Server::movementConsequences(int indexPlayer){
             canFinish.setType(CANENDTURN);
             socket.send(canFinish, *socketsPlayers[turnos[indexTurno]]);
         }
-        else
+        else{
             std::cout << "ESTA PROPIEDAD YA ES PROPIEDAD DEL PLAYER " << players[indexPlayer].nick << "\n";
-
+            canFinishTurn = true;
+            Message canFinish;
+            canFinish.setType(CANENDTURN);
+            socket.send(canFinish, *socketsPlayers[turnos[indexTurno]]);
+        }
         break;
     }
     case IMPUESTO:
@@ -590,19 +599,21 @@ void Server::hipotecar_deshipotecar(int indexPosition,int hipoteca){
                     cobrar.setType(COBRAR);
                     socket.send(cobrar, *socketsPlayers[calle->getProperty()]);
                     calle->setType(HIPOTECADA);
+                    hipotecaMsg.hipoteca=2;
                 }
                 else hipotecaMsg.msgResponse= calle->getName()+" Ya esta Hipotecada\n";
             }
             else{
                 if(calle->getType()==HIPOTECADA){
                    
-                    if( players[turnos[indexTurno]].dinero>=calle->getMortgage()){
+                    if( players[turnos[indexTurno]].dinero>=calle->getMortgage()*2){
                         hipotecaMsg.msgResponse= calle->getName()+" deshipotecada con Exito\n";
-                        players[turnos[indexTurno]].dinero-=calle->getMortgage();
-                        PagarMsg cobrar(calle->getMortgage());
+                        players[turnos[indexTurno]].dinero-=calle->getMortgage()*2;
+                        PagarMsg cobrar(calle->getMortgage()*2);
                         cobrar.setType(PAGAR);
                         socket.send(cobrar, *socketsPlayers[calle->getProperty()]);
-                        calle->setType(CALLE);                       
+                        calle->setType(CALLE);
+                        hipotecaMsg.hipoteca=3;                       
                     }
                     else hipotecaMsg.msgResponse=" No puedes Deshipotecar "+ calle->getName()+" porque no tienes suficiente dinero\n";
                 }
@@ -612,5 +623,7 @@ void Server::hipotecar_deshipotecar(int indexPosition,int hipoteca){
         }
     }
     std::cout<<hipotecaMsg.msgResponse;
-    socket.send(hipotecaMsg, *socketsPlayers[turnos[indexTurno]]);
+    for(auto it=socketsPlayers.begin();it!=socketsPlayers.end();it++){
+        socket.send(hipotecaMsg, *(*it));
+    }   
 }

@@ -25,7 +25,9 @@ void Player::login(){
     }
 }
 Player::~Player(){
-   // delete boton;
+   for (auto it=botones.begin();it!=botones.end();it++){
+        delete it->second;
+    }
 }
 void Player::logout(){
     // Completar
@@ -48,8 +50,24 @@ void Player::loadWindow(){
     texturaMapa=SDLTexture(SDLUtils::instance()->renderer(), "Images/Tablero_1.jpg",{20,0,760,560});      
     texturaJugador=SDLTexture(SDLUtils::instance()->renderer(), "Images/Barco.png",{20,20,25,25});  
     texturaJugador.setPosition({693.5,520});
-    
-    //boton = new Button(SDLUtils::instance()->renderer(), "Images/Barco.png",{50,50,60,60}, this, &Player::foo);
+
+    miTurno=SDLTexture(SDLUtils::instance()->renderer(), "Images/miTurno.png",{350,100,100,100});
+    miTurno.setVisibility(false);
+
+    botones.insert({"comprarBoton",new Button(SDLUtils::instance()->renderer(), "Images/comprarBoton.png",{50,480,60,60}, this, &Player::comrarCalle)});
+    botones["comprarBoton"]->setVisibility(false);
+
+    botones.insert({"dados",new Button(SDLUtils::instance()->renderer(), "Images/dados.png",{620,420,60,60}, this, &Player::tirarDados)});
+    botones["dados"]->setVisibility(false);
+
+    mensajeCARCEL=SDLTexture(SDLUtils::instance()->renderer(), "Images/mensajeCarcel.png",{200,100,350,100});
+    mensajeCARCEL.setVisibility(false);
+
+    botones.insert({"CARCEL_NO",new Button(SDLUtils::instance()->renderer(), "Images/NO.png",{250,175,50,50},this,nullptr)});
+    botones["CARCEL_NO"]->setVisibility(false);
+
+    botones.insert({"CARCEL_SI",new Button(SDLUtils::instance()->renderer(), "Images/SI.png",{450,175,50,50},this,nullptr)});
+    botones["CARCEL_SI"]->setVisibility(false);
 }
 
 void Player::input_thread(){
@@ -64,53 +82,7 @@ void Player::input_thread(){
                 logout();
                 break;
             }
-            if(isMyTurn){
-                if(msg=="t"&&!canFinishMyTurn){ //TIRAR DADOS                              
-                    int dado1= std::rand() %6 + 1;
-                    int dado2= std::rand() %6 + 1;
-                    int suma=dado1+dado2+indexPosition;
-                    suma%=40;
-                    if(suma<indexPosition && suma!=0) //Si suma justo es la salida no entra porq se sumaria 2 veces
-                    {
-                        PlayerSerializable player(nick,0,money,indexPlayer);//Muevo al jugador a la salida
-                        socket.send(player,socket);
-                    }
-                    indexPosition=suma;
-                                
-                    std::cout<<"Tiro: "<<dado1<<" "<<dado2<<"\n";
-                    std::cout<<"IndexPosition: "<<indexPosition<<"\n";              
-                    PlayerSerializable player(nick,indexPosition,money,indexPlayer);//POR DEFECTO ES MOVER EL TIPO DE MENSAJE PLAYERSERIALIZABLE
-                    socket.send(player,socket);
-                    moverPlayer(indexPosition,&texturaJugador);
-                }
-                if(msg=="e"&&canFinishMyTurn){ //SI PUEDO ACABAR TURNO
-                    std::cout<<"Acabo Mi Turno\n";
-                    Message initturno;
-                    initturno.setType(ENDTURN);
-                    socket.send(initturno, socket);
-                    isMyTurn=false;
-                    canBuySomething=false;
-                    if(money<0){
-                        onGame=false;
-                        std::cout<<"BANCA ROTA\n";
-                        for(auto it:playerProperties){
-                            HipotecaMsg hipoteca(it.first,1);
-                            socket.send(hipoteca,socket);
-                        }
-                    }
-                }
-                if(msg[0]=='e'&&!canFinishMyTurn)std::cout<<"No puedes acabar tu turno\n";
-
-                if(msg=="c" && canBuySomething && compra.buyPrice<=money){ //SI PUEDO COMPRAR 
-                    canBuySomething=false;
-                    socket.send(compra,socket);                
-                    money-=compra.buyPrice;
-                    playerProperties.insert({compra.indexCasilla,compra.nombre});
-                    std::cout<<"Calle Comprada\n";                             
-                }
-                else if(msg[0]=='c' && canBuySomething && compra.buyPrice>money){
-                    std::cout<<"No puedes comprar\n";
-                }
+            if(isMyTurn){               
                 if(msg=="s" && isInJail && money>=moneyToPay){
                     isInJail=false;
                     money-=moneyToPay;
@@ -138,36 +110,7 @@ void Player::input_thread(){
                         if(quitar=="q")casa.quitarCasas=1;
                         socket.send(casa, socket);
                     }
-                }
-                if(msg[0]=='m'){ //QUITAR
-                    std::istringstream iss(msg);
-                    std::string num;
-                    std::getline(iss,num,' ');
-                    std::getline(iss,num,' ');
-                    int suma=std::stoi(num);
-                    suma%=40;
-                    if(suma<indexPosition && suma!=0) //Si suma justo es la salida no entra porq se sumaria 2 veces
-                    {
-                        PlayerSerializable player(nick,0,money,indexPlayer);//Muevo al jugador a la salida
-                        socket.send(player,socket);
-                    }
-                    indexPosition=suma;
-
-                    std::cout<<"IndexPosition: "<<indexPosition<<"\n";              
-                    PlayerSerializable player(nick,indexPosition,money,indexPlayer);//POR DEFECTO ES MOVER EL TIPO DE MENSAJE PLAYERSERIALIZABLE
-                    socket.send(player,socket);
-                }
-                if(msg[0]=='h'){
-                    std::istringstream iss(msg);
-                    std::string num,hipotecar;
-                    std::getline(iss,num,' ');
-                    std::getline(iss,num,' ');
-                    std::getline(iss,hipotecar,' ');               
-                    int aux=hipotecar=="hipotecar"?1:0;              
-                    HipotecaMsg hipoteca(std::stoi(num),aux);
-                    socket.send(hipoteca,socket);
-                }
-                std::cout<<"Money: "<<money<<"\n";
+                }                                             
             }
         }        
     }
@@ -190,7 +133,7 @@ void Player::net_thread(){
                     indexPosition=playerMSG.indexPosition;
                     indexPlayer=playerMSG.indexPlayer;
                     money=playerMSG.dinero;
-                    std::cout<<"INIT RECIDIBIDO "<<indexPlayer<<"\n";                                      
+                    std::cout<<"JUGADO MOVIDO "<<indexPlayer<<"\n";                                      
                 }
                 else{
                     std::cout<<"RECIBO UN PLAYER"<<playerMSG.indexPlayer<<"\n";
@@ -225,6 +168,8 @@ void Player::net_thread(){
                     }
                 }
                 else{
+                    botones["dados"]->setVisibility(true);  
+                    miTurno.setVisibility(true);
                     isMyTurn=true;
                     canFinishMyTurn=false;  
                 }         
@@ -236,6 +181,7 @@ void Player::net_thread(){
                 break;
             } 
             case COMPRAR:{
+                botones["comprarBoton"]->setVisibility(true);
                 compra = ComprarCalleMsg();
                 canBuySomething=true;
                 compra.from_bin(tmpMessage.data());
@@ -271,13 +217,31 @@ void Player::net_thread(){
             case CASA:{
                 CasaMsg casa;
                 casa.from_bin(tmpMessage.data());
-                std::cout<<"SOLICITUD DE CASA: "<<casa.msgResponse;
+                if(playerProperties.find(casa.indexPosition)!=playerProperties.end())
+                     std::cout<<"SOLICITUD DE CASA: "<<casa.msgResponse;              
+                //Poner casas en el mapa
+                if(casa.quitarCasas==3){std::cout<<"quitar\n"; colocarCasas(casa.indexPosition,casa.numCasas,true);}
+                else if(casa.quitarCasas==2){ std::cout<<"poner\n"; colocarCasas(casa.indexPosition,casa.numCasas,false);}
                 break;
             }
             case HIPOTECA:{
                 HipotecaMsg hipoteca;
                 hipoteca.from_bin(tmpMessage.data());
-                std::cout<<"SOLICITUD DE HIPOTECAR: "<<hipoteca.msgResponse<<"\n";
+                if(playerProperties.find(hipoteca.indexPosition)!=playerProperties.end())
+                    std::cout<<"SOLICITUD DE HIPOTECAR: "<<hipoteca.msgResponse<<"\n";
+
+                if(marcaHipoteca[hipoteca.indexPosition].getSDLTex()==nullptr){
+                    marcaHipoteca[hipoteca.indexPosition]=SDLTexture(SDLUtils::instance()->renderer(), "Images/marcahipoteca.png",{20,20,30,30});
+                    moverPlayer(hipoteca.indexPosition,&marcaHipoteca[hipoteca.indexPosition]);
+                    marcaHipoteca[hipoteca.indexPosition].setVisibility(false);
+                }
+
+                if(hipoteca.hipoteca==2){
+                    marcaHipoteca[hipoteca.indexPosition].setVisibility(true);    
+                }
+                else if(hipoteca.hipoteca==3){ 
+                    marcaHipoteca[hipoteca.indexPosition].setVisibility(false); 
+                }
                 break;
             }
             case VICTORIA:{
@@ -287,30 +251,44 @@ void Player::net_thread(){
         }        
     }
 }
+
 void Player::bucleVentana(){
-    std::cout<<"Hola hilo\n";
     while(!exit){
         Uint32 startTime = sdlutils().currRealTime();
         gestionEventos();
         //RENDERIZAR IMAGENES       
         sdlutils().clearRenderer({0, 0, 0});      
-
         texturaMapa.render();
         texturaJugador.render();
+        miTurno.render();
+        mensajeCARCEL.render();
         for(auto it=jugadores.begin();it!=jugadores.end();it++){
             it->second.render();
         }         
-        //boton->render();
+        for (auto it=botones.begin();it!=botones.end();it++){
+           it->second->render();
+        }
+        for (auto it=marcaHipoteca.begin();it!=marcaHipoteca.end();it++){
+           it->second.render();
+        }
+        for (auto it=casasCasilla.begin();it!=casasCasilla.end();it++){
+            for(int i=0;i<it->second.size();i++){
+                it->second[i].render();
+            }             
+        }
         sdlutils().presentRenderer();//TE PRESENTA LOS CAMBIOS EN LA VENTANA
         Uint32 frameTime = sdlutils().currRealTime() - startTime;
 		if (frameTime < 20)
 			SDL_Delay(20 - frameTime);
     }
 }
+
 void Player::gestionEventos(){
     SDL_Event event;
     while (SDL_PollEvent(&event)){
-        //boton->handleEvent(event);
+        for (auto it=botones.begin();it!=botones.end();it++){
+          if(it->second->getVisibility()) it->second->handleEvent(event);
+        }
         if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)){
             exit=true;
             std::cout<<"CERRAR VENTANA\n";
@@ -320,9 +298,10 @@ void Player::gestionEventos(){
         if(event.type == SDL_KEYDOWN&&onGame){
             switch (event.key.keysym.scancode){
                 case SDL_SCANCODE_SPACE:{ //TIRAR LOS DADOS
-                    if(!canFinishMyTurn){ //TIRAR DADOS                              
-                        int dado1= 0;//std::rand() %6 + 1;
-                        int dado2= 4;//std::rand() %6 + 1;
+                    if(isMyTurn&&!canFinishMyTurn){ //TIRAR DADOS
+                        botones["dados"]->setVisibility(false);                                
+                        int dado1=1; //std::rand() %6 + 1;
+                        int dado2=0; //std::rand() %6 + 1;
                         int suma=dado1+dado2+indexPosition;
                         suma%=40;
                         if(suma<indexPosition && suma!=0) //Si suma justo es la salida no entra porq se sumaria 2 veces
@@ -331,7 +310,7 @@ void Player::gestionEventos(){
                             socket.send(player,socket);
                         }
                         indexPosition=suma;
-                            
+                                
                         std::cout<<"Tiro: "<<dado1<<" "<<dado2<<"\n";
                         std::cout<<"IndexPosition: "<<indexPosition<<"\n";              
                         PlayerSerializable player(nick,indexPosition,money,indexPlayer);//POR DEFECTO ES MOVER EL TIPO DE MENSAJE PLAYERSERIALIZABLE
@@ -341,13 +320,25 @@ void Player::gestionEventos(){
                     break;
                 }
                 case SDL_SCANCODE_E:{
-                    if(canFinishMyTurn){ //SI PUEDO ACABAR TURNO
+                    if(isMyTurn&&canFinishMyTurn){ //SI PUEDO ACABAR TURNO
+                       
                         std::cout<<"Acabo Mi Turno\n";
+                        miTurno.setVisibility(false);
+                        botones["comprarBoton"]->setVisibility(false);
                         Message initturno;
                         initturno.setType(ENDTURN);
                         socket.send(initturno, socket);
                         isMyTurn=false;
                         canBuySomething=false;
+                        if(money<0){
+                            onGame=false;
+                            std::cout<<"BANCA ROTA\n";
+                            for(auto it:playerProperties){
+                                HipotecaMsg hipoteca(it.first,1);
+                                socket.send(hipoteca,socket);
+                            }
+                        }
+                        std::cout<<"Money: "<<money<<"\n";
                     }       
                     break;
                 }
@@ -357,11 +348,13 @@ void Player::gestionEventos(){
         }
     }
 }
-void Player::moverPlayer(int indexPosition,SDLTexture* textura){
+
+void Player::moverPlayer(int indexPosition,SDLTexture* textura,Vector2 Offset){
+
     if(indexPosition>30){
-       Vector2 pos= textura->getPosition();
-       pos={720,(double)(90+45*(indexPosition%30))};
-       textura->setPosition(pos);
+        Vector2 pos= textura->getPosition();
+        pos={(double)(720-Offset.getX()*1.75),(double)(45+45*(indexPosition%30)-Offset.getY())};
+        textura->setPosition(pos);
     }
     else if(indexPosition==30){
     Vector2 pos= textura->getPosition();
@@ -370,7 +363,7 @@ void Player::moverPlayer(int indexPosition,SDLTexture* textura){
     }
     else if(indexPosition>20){
        Vector2 pos= textura->getPosition();
-       pos={(double)(88+60*(indexPosition%20)+(indexPosition%20)*0.2),20};
+       pos={(double)(88+60*(indexPosition%20)+(indexPosition%20)*0.2-Offset.getY()),(double)(20+Offset.getX()*1.25)};
        textura->setPosition(pos);
     }
     else if(indexPosition==20){
@@ -380,7 +373,7 @@ void Player::moverPlayer(int indexPosition,SDLTexture* textura){
     }
     else if(indexPosition>10){
        Vector2 pos= textura->getPosition();
-       pos={50,(double)(495-45*(indexPosition%10))};
+       pos={(double)(50+Offset.getX()*1.5),(double)(495-45*(indexPosition%10)+Offset.getY()*0.25)};
        textura->setPosition(pos);
     }
     else if(indexPosition==10){
@@ -392,7 +385,72 @@ void Player::moverPlayer(int indexPosition,SDLTexture* textura){
     }
     else {
        Vector2 pos= textura->getPosition();
-       pos={(double)(693.5-60*(indexPosition%40)-(indexPosition%40)*0.2),520};
+       pos={(double)(693.5-60*(indexPosition%40)-(indexPosition%40)*0.2)-Offset.getY(),(double)(520-Offset.getX()*1.25)};
        textura->setPosition(pos);
+    }
+}
+
+void Player::comrarCalle(){
+   if(isMyTurn && canBuySomething && compra.buyPrice<=money){ //SI PUEDO COMPRAR 
+        botones["comprarBoton"]->setVisibility(false);
+        canBuySomething=false;
+        socket.send(compra,socket);                
+        money-=compra.buyPrice;
+        playerProperties.insert({compra.indexCasilla,compra.nombre});
+        botones.insert({compra.nombre,new Button(SDLUtils::instance()->renderer(), "Images/hipotecar.png",{620,420,40,20}, this, nullptr,&Player::hipotecar)});
+        botones[compra.nombre]->setIndex(compra.indexCasilla);
+        moverPlayer(compra.indexCasilla,botones[compra.nombre],{50,15});
+          
+        std::cout<<"Calle Comprada\n";
+                                    
+    }
+    else if(isMyTurn&& canBuySomething && compra.buyPrice>money){
+        std::cout<<"No puedes comprar\n";
+    }
+}
+
+void Player::tirarDados(){
+    if(isMyTurn&&!canFinishMyTurn){ //TIRAR DADOS 
+        botones["dados"]->setVisibility(false);                             
+        int dado1= std::rand() %6 + 1;
+        int dado2= std::rand() %6 + 1;
+        int suma=dado1+dado2+indexPosition;
+        suma%=40;
+        if(suma<indexPosition && suma!=0) //Si suma justo es la salida no entra porq se sumaria 2 veces
+        {
+            PlayerSerializable player(nick,0,money,indexPlayer);//Muevo al jugador a la salida
+            socket.send(player,socket);
+        }
+        indexPosition=suma;
+                    
+        std::cout<<"Tiro: "<<dado1<<" "<<dado2<<"\n";
+        std::cout<<"IndexPosition: "<<indexPosition<<"\n";              
+        PlayerSerializable player(nick,indexPosition,money,indexPlayer);//POR DEFECTO ES MOVER EL TIPO DE MENSAJE PLAYERSERIALIZABLE
+        socket.send(player,socket);
+        moverPlayer(indexPosition,&texturaJugador);
+    }
+}
+
+void Player::hipotecar(int index,bool wasclicked){
+    std::cout<<"entraa\n";
+    if(isMyTurn){      
+        int aux=!wasclicked?1:0;
+
+        HipotecaMsg hipoteca(index,aux);
+        socket.send(hipoteca,socket);
+    }
+}
+
+void Player::colocarCasas(int index,int num,bool quitar){
+    if(!quitar){
+        for (int i = 0; i < num; i++){
+           casasCasilla[index].push_back(SDLTexture(SDLUtils::instance()->renderer(), "Images/casa.png",{350,100,15,15}));
+           moverPlayer( index,&casasCasilla[index].back(),{32.0,(double)(5-i*9)});
+        }               
+    }
+    else{
+        for (int i = 0; i < num; i++){
+           casasCasilla[index].pop_back();
+        } 
     }
 }

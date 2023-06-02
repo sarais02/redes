@@ -9,7 +9,7 @@ SDLTexture::SDLTexture() : texture_(nullptr), renderer_(nullptr), width_(0), hei
 
 SDLTexture::SDLTexture(SDL_Renderer* renderer, const string& fileName,SDL_Rect Dest) : texture_(nullptr), width_(0), height_(0),position(0,0),dest(Dest) {
 	loadFromImg(renderer, fileName);
-	setPosition({dest.x,dest.y});
+	setPosition({(double)dest.x,(double)dest.y});
 }
 /*
 Texture::Texture(SDL_Renderer* renderer, const string& text, const Font* font, const SDL_Color& color) :
@@ -109,6 +109,7 @@ void SDLTexture::render() const {
 }
 
 void SDLTexture::render(const SDL_Rect& dest, const SDL_Rect& frame) const {
+	if(!visible){return;}
 	if (texture_) {
 		if(SDL_RenderCopy(renderer_, texture_, &frame, &dest)==-1){
 			std::cout<<SDL_GetError()<<"\n";
